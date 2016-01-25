@@ -5,21 +5,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 print("all loaded")
 DIR = 'lecture-examples-master/'
-crime = pd.read_csv('pa1/dec_2015_crimes.csv', parse_dates=['Date'])
-crime
+crimes = pd.read_csv('pa1/dec_2015_crimes.csv', parse_dates=['Date'])
+crimes
 # Groupby: Given a key column, one can partition a table into groups:
 crimes50_by_community = crimes.head(50).groupby('Community Area')
 print('crimes50_by_community.groups\n',crimes50_by_community.groups)
 crimes_by_community = crimes.groupby('Community Area')
 print('crimes_by_community.groups\n',crimes_by_community.groups)
 # Aggregate
-#
 # We can aggregate a column over the groups using an aggregate function.
 #    * Built-in functions include 'sum' 'mean' 'median' 'mode' 'count' 'std' 'nunique'.
 #    * Can also pass an arbitrary function whose argument is a vector and returns a scalar.
 community_crime_count = crimes_by_community['ID'].agg('count')
 community_crime_count
 community_crime_count.plot(kind='bar', figsize=(12,5))
+plt.show()
+
 # Daily Timeseries
 def to_day(timestamp):
     return timestamp.replace(minute=0,hour=0, second=0)
@@ -27,8 +28,11 @@ def to_day(timestamp):
 crimes['Day'] = crimes['Date'].apply(to_day)
 crimes_by_day = crimes.groupby('Day')
 crimes_by_day['ID'].agg('count').plot()
+plt.show()
+
 # What about a time series for a single community area?
 crimes[crimes['Community Area'] == 41].groupby('Day')['ID'].agg('count').plot()
+plt.show()
 # Multiple Group By
 # To get a series for each community area we could just loop over them.
 # But there is a better way.
@@ -50,9 +54,11 @@ community_arrest_timeseries.fillna(0, inplace=True)
 community_arrest_timeseries
 # Now we can plot multiple community area timeseries:
 community_arrest_timeseries[[40,41,42]].plot()
+plt.show()
 # Another dataset
 # Let's look at Chicago's affordable housing dataset
-housing = pd.read_csv(DIR'Affordable_Rental_Housing_Developments.csv')
+newfile = DIR + 'Affordable_Rental_Housing_Developments.csv'
+housing = pd.read_csv(newfile)
 housing
 # Join
 # What if we want to know the crime rate in the community for each housing development?
@@ -92,3 +98,4 @@ housing_crime_aggregate
 # In our case those should be zeros, so we can `fillna(0)`.
 housing_crime_aggregate.fillna(0, inplace=True)
 housing_crime_aggregate.plot(kind='scatter', x='Affordable Housing Units', y='Crime Count')
+plt.show()
