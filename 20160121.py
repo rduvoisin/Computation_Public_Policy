@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 print("all loaded")
+DIR = 'lecture-examples-master/'
 crime = pd.read_csv('pa1/dec_2015_crimes.csv', parse_dates=['Date'])
 crime
 # Groupby: Given a key column, one can partition a table into groups:
@@ -51,7 +52,7 @@ community_arrest_timeseries
 community_arrest_timeseries[[40,41,42]].plot()
 # Another dataset
 # Let's look at Chicago's affordable housing dataset
-housing = pd.read_csv('Affordable_Rental_Housing_Developments.csv')
+housing = pd.read_csv(DIR'Affordable_Rental_Housing_Developments.csv')
 housing
 # Join
 # What if we want to know the crime rate in the community for each housing development?
