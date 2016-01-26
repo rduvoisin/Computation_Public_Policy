@@ -132,6 +132,11 @@ crimes_by_community = crimeses.groupby(cname)
 
 # Define a function to initiate a series of CommunityArea objects.
 variables = crimeses.columns.tolist()
+
+def get_nice_colors(n_colors):
+    '''Helper for MakeCommunities for fixed community colors.'''
+    return cm.Accent([1 - (i/n_colors) for i in range(n_colors)])
+
 def get_fx_from_param(param_to_var, param):
     '''
     Helper for MakeCommunities parameter compiler:
@@ -150,45 +155,71 @@ def get_fx_from_param(param_to_var, param):
         return comm_slice[param_to_var[param]].describe()['top']
 
 
-def MakeCommunities(data):
-    '''Given two columns of data, returns a
-    list of CommunityArea instances.
+def MakeCommunities(crimes_by_community):
     '''
-    include_list = [cname, community, arrest, primary, hardship, pcincome]
+    Input crime and ses by community area groupby object.
+    Returns a list of CommunityArea objects.
+    '''
+    communities = []
+
     parameters = ['NAME', 'NUMBER', 'ARRESTS', 'COUNT',
                   'CRIMES', 'TOP', 'HARDSHIP', 'INCOME']
+
     param_to_var = {'NAME' : cname, 'NUMBER' : community,
                     'ARRESTS' : arrest, 'COUNT' : community,
                     'CRIMES' : primary, 'TOP' : primary,
                     'HARDSHIP' : hardship, 'INCOME' : pcincome}
 
-    communities = []
-    MEANS_INDEX = [parameters.index('NUMBER'), parameters.index('HARDSHIP'),
-                   parameters.index('INCOME')]
-    COUNTS_INDEX = [parameters.index('COUNT')]
-    SUMS_INDEX = [parameters.index('ARRESTS')]
-    TOPS_INDEX = [parameters.index('NAME'), parameters.index('TOP')]
-    UNIQUE_INDEX = [parameters.index('CRIMES')]
-    count = 0
-    mean = 1
-    top = 'top'
-    for comm in crimes_by_community.groups.keys(){
+    MEANS_INDEX = ['NUMBER', 'HARDSHIP','INCOME']
+    COUNTS_INDEX = ['COUNT']
+    SUMS_INDEX = ['ARRESTS']
+    TOPS_INDEX = ['NAME', 'TOP']
+    UNIQUE_INDEX = ['CRIMES']
+    # count = 0
+    # mean = 1
+    # top = 'top'
+    community_colors = get_nice_colors(crimes_by_community.ngroups)
+    community_colors = community_colors.tolist()
+
+    areas_list = crimes_by_community.groups.keys()
+
+    for comm in areas_list:
         # crimes_by_community.groups[comm][0]
         param_to_value = {}
         comm_slice = crimes_by_community.get_group[comm]
-        NAME = crimes_by_community.get_group(comm)[cname].describe()[top]
-        NUMBER = crimes_by_community.get_group[comm][community].describe()[mean]
-        ARRESTS = crimes_by_community.get_group(comm)[arrest].sum()
-        COUNT = crimes_by_community.get_group(comm)[community].describe()[count]
-        CRIMES = crimes_by_community.get_group(comm)[primary].unique().tolist()
-        TOP = crimes_by_community.get_group(comm)[primary].describe()[top]
-        HARDSHIP = crimes_by_community.get_group[comm][hardship].describe()[mean]
-        INCOME = crimes_by_community.get_group[comm][pcincome].describe()[mean]
-        new_community = CommunityArea(NAME, NUMBER, COUNT,
-                                      CRIMES)
-    }
 
-    return None
+        for comm_char in parameters:
+            param_to_value[comm_char] = get_fx_from_param(param_to_var, comm_char)
+
+        order_number = areas_list.index(comm)
+        if order_number % 2 == 0:
+            color = community_colors[order_number]
+        else:
+            color = community_colors[-order_number]
+
+        # name, number, crime_count, arrests, primary_list=[],
+        #              primary=None, hardship=None, income=None, color=None, plot_value=0):
+
+        new_community = CommunityArea(comm, param_to_value['NUMBER'],
+                                      param_to_value['COUNT'],
+                                      param_to_value['ARRESTS'],
+                                      param_to_value['CRIMES'],
+                                      param_to_value['TOP'],
+                                      param_to_value['HARDSHIP'],
+                                      param_to_value['INCOME'],
+                                      color)
+        communities.append(new_community)
+        # NAME = crimes_by_community.get_group(comm)[cname].describe()[top]
+        # NUMBER = crimes_by_community.get_group[comm][community].describe()[mean]
+        # ARRESTS = crimes_by_community.get_group(comm)[arrest].sum()
+        # COUNT = crimes_by_community.get_group(comm)[community].describe()[count]
+        # CRIMES = crimes_by_community.get_group(comm)[primary].unique().tolist()
+        # TOP = crimes_by_community.get_group(comm)[primary].describe()[top]
+        # HARDSHIP = crimes_by_community.get_group[comm][hardship].describe()[mean]
+        # INCOME = crimes_by_community.get_group[comm][pcincome].describe()[mean]
+
+
+    return communities
 
 community_crime_count = crimes_by_community['ID'].agg('count')
 community_crime_count.sort(ascending=False)
