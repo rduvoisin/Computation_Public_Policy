@@ -59,7 +59,7 @@ class CommunityArea(object):
     - value - mutable anytime.
     '''
 
-    def __init__(self, name, number, color, plot_value=0)
+    def __init__(self, name, number, color, plot_value=0):
         self.__name = name
         self.__number = number
         self,__color = color
@@ -74,7 +74,7 @@ class CommunityArea(object):
         return self.__number
     @property
     def color(self):
-        '''An RGB color list.''''
+        '''An RGB color list.'''
         return self.__color
 
     @color.setter
@@ -99,7 +99,7 @@ crimeses = crimes.merge(ses, left_on=community,
                                      # in version 0.17.0. Grrr...
 crimes_by_community = crimeses.groupby(cname)
 community_crime_count = crimes_by_community['ID'].agg('count')
-community_crime_count.sort(ascending=False).tolist()
+community_crime_count.sort(ascending=False)
 print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
      format(community_crime_count.index[0],
             community_crime_count[0],
@@ -132,8 +132,8 @@ community_crime_dailycount = crimeses.groupby([cname, 'Day'])
 community_crime_dailycount = community_crime_dailycount['ID'].agg('count')
 community_crime_dailyunstack = community_crime_dailycount.unstack(cname)
 community_crime_dailyunstack.fillna(0, inplace=True)
-community_crime_dailyunstack.iloc(:,1).plot()
-plt.show()
+# community_crime_dailyunstack.iloc(:,1).plot()
+# plt.show()
 # crimes_by_community = crimes.groupby('Community Area')
 # print('crimes_by_community.groups\n',crimes_by_community.groups)
 #
