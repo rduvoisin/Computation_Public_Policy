@@ -48,6 +48,48 @@ ses = pd.read_csv('Census_Data_Selected_socioeconomic_indicators_in_Chicago_2008
 
 communityses = "Community Area Number"
 cname = "COMMUNITY AREA NAME"
+cnames = crimeses[cname].unique().tolist()
+# Make a community area class to hold certain attributes stable in plottling.
+class CommunityArea(object):
+    '''Initiates a class to hold attributes of Chicago's
+    77 Community Areas constant for formatting data visualizations;
+    - name
+    - number (1-77)
+    - color
+    - value - mutable anytime.
+    '''
+
+    def __init__(self, name, number, color, plot_value=0)
+        self.__name = name
+        self.__number = number
+        self,__color = color
+        self.value = plot_value # Public; mutable anytime.
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def number(self):
+        return self.__number
+    @property
+    def color(self):
+        '''An RGB color list.''''
+        return self.__color
+
+    @color.setter
+    def color(self, color):
+        if isinstance(color,(str, list, np.ndarray)):
+            self.__color = color
+
+
+# Define a function to initiate a series of CommunityArea objects.
+def MakeCommunities(data):
+    '''Given two columns of data, returns a
+    list of CommunityArea instances.
+    '''
+    return
+
 # (a) Calculate the number of crimes in each Community Area in 2015.
 # Only presume that ses contains comprehensive community areas.
 # Merge crimes by community area:
@@ -55,7 +97,43 @@ crimeses = crimes.merge(ses, left_on=community,
                         right_on=communityses,
                         how='outer') # I want that indicator oprion
                                      # in version 0.17.0. Grrr...
+crimes_by_community = crimeses.groupby(cname)
+community_crime_count = crimes_by_community['ID'].agg('count')
+community_crime_count.sort(ascending=False).tolist()
+print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
+     format(community_crime_count.index[0],
+            community_crime_count[0],
+            community_crime_count.index[76],
+            community_crime_count[76]))
+plt.close('all')
+fig = plt.figure(figsize=(10,12))
+xlabels = community_crime_count.index[:].tolist()
+doc = 'crime_count_bycommunity.png'
+community_crime_count.plot(kind='bar',
+                           title='Crime Counts by Community Area, 2015') #, labels=crimes[cname]
 
+
+
+fig.savefig(doc)
+plt.close('all')
+def to_day(timestamp):
+    return timestamp.replace(minute=0,hour=0, second=0)
+
+def get_date(date):
+    return date.to_datetime #(format='%Y%m%d', errors='coerce')
+
+from operator import methodcaller
+s = pd.Series(crimeses['Date'])
+d = s[:258478].map(lambda x: x.strftime('%Y-%m-%d'))
+# d[258478] = s[258478:258478].map(lambda x: x.strftime('%Y-%m-%d'))
+crimeses['Day'] = d.to_frame()
+plt.close('all')
+community_crime_dailycount = crimeses.groupby([cname, 'Day'])
+community_crime_dailycount = community_crime_dailycount['ID'].agg('count')
+community_crime_dailyunstack = community_crime_dailycount.unstack(cname)
+community_crime_dailyunstack.fillna(0, inplace=True)
+community_crime_dailyunstack.iloc(:,1).plot()
+plt.show()
 # crimes_by_community = crimes.groupby('Community Area')
 # print('crimes_by_community.groups\n',crimes_by_community.groups)
 #
