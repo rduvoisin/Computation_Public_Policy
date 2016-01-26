@@ -42,12 +42,15 @@ updated = "Updated On"
 lat = "Latitude"
 lon = "Longitude"
 lat_lon = "Location"
+pcincome = 'PER CAPITA INCOME '
+hardship = 'HARDSHIP INDEX'
+communityses = "Community Area Number"
+cname = "COMMUNITY AREA NAME"
 
 crimes = pd.read_csv('2015_crimes.csv', parse_dates=['Date'])
 ses = pd.read_csv('Census_Data_Selected_socioeconomic_indicators_in_Chicago_2008_2012.csv')
+variables = crimeses.columns.tolist()
 
-communityses = "Community Area Number"
-cname = "COMMUNITY AREA NAME"
 cnames = crimeses[cname].unique().tolist()
 # Make a community area class to hold certain attributes stable in plottling.
 class CommunityArea(object):
@@ -57,13 +60,21 @@ class CommunityArea(object):
     - number (1-77)
     - color
     - value - mutable anytime.
+    - harship - hardship index
+    - income - per capita income
     '''
 
-    def __init__(self, name, number, color, plot_value=0):
+    def __init__(self, name, number, color,
+                 crime_count, arrests, hardship=None, income=None, plot_value=0):
         self.__name = name
         self.__number = number
-        self,__color = color
-        self.value = plot_value # Public; mutable anytime.
+        self.__color = color
+        self.count = crime_count  # Public; mutable anytime.
+        self.arrest = arrests  # Public; mutable anytime.
+        self.types = types  # Public; mutable anytime.
+        self.__hardship = hardship
+        self.__income = income
+        self.value = plot_value  # Public; mutable anytime.
 
     @property
     def name(self):
@@ -82,14 +93,35 @@ class CommunityArea(object):
         if isinstance(color,(str, list, np.ndarray)):
             self.__color = color
 
+    @property
+    def hardship(self):
+        return self.__hardship
+
+    @hardship.setter
+    def hardship(self, number):
+        if isinstance(number, (int, float)):
+            self.__hardship = number
+
+    @property
+    def income(self):
+        return self.__income
+
+    @income.setter
+    def income(self, income):
+        if isinstance(income, (int, float)):
+            self.__income = income
+
+
 
 # Define a function to initiate a series of CommunityArea objects.
 def MakeCommunities(data):
     '''Given two columns of data, returns a
     list of CommunityArea instances.
     '''
-    return
 
+    return None
+np.unique(crimeses[[cname]].values).tolist()
+namepd = np.unique(crimeses[[cname]].values).tolist()
 # (a) Calculate the number of crimes in each Community Area in 2015.
 # Only presume that ses contains comprehensive community areas.
 # Merge crimes by community area:
@@ -98,8 +130,14 @@ crimeses = crimes.merge(ses, left_on=community,
                         how='outer') # I want that indicator oprion
                                      # in version 0.17.0. Grrr...
 crimes_by_community = crimeses.groupby(cname)
+variables = crimeses.columns.tolist()
+for comm in crimes_by_community.groups.keys(){
+
+
+}
 community_crime_count = crimes_by_community['ID'].agg('count')
 community_crime_count.sort(ascending=False)
+community_area_crime = pd.DataFrame({'Crime Count': community_crime_count})
 print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
      format(community_crime_count.index[0],
             community_crime_count[0],
