@@ -49,7 +49,7 @@ cname = "COMMUNITY AREA NAME"
 
 crimes = pd.read_csv('2015_crimes.csv', parse_dates=['Date'])
 ses = pd.read_csv('Census_Data_Selected_socioeconomic_indicators_in_Chicago_2008_2012.csv')
-variables = crimeses.columns.tolist()
+
 
 cnames = crimeses[cname].unique().tolist()
 # Make a community area class to hold certain attributes stable in plottling.
@@ -58,20 +58,25 @@ class CommunityArea(object):
     77 Community Areas constant for formatting data visualizations;
     - name
     - number (1-77)
-    - color
-    - value - mutable anytime.
+    - crime_count = total crimes in the data
+    - arrests = total arrests in the data
+    - crimes = unique list of primary types
+    - primary = top crime type
     - harship - hardship index
     - income - per capita income
+    - color
+    - value - mutable anytime.
     '''
 
-    def __init__(self, name, number, color,
-                 crime_count, arrests, hardship=None, income=None, plot_value=0):
+    def __init__(self, name, number, crime_count, arrests, primary_list=[],
+                 primary=None, hardship=None, income=None, color=None, plot_value=0):
         self.__name = name
         self.__number = number
         self.__color = color
         self.count = crime_count  # Public; mutable anytime.
-        self.arrest = arrests  # Public; mutable anytime.
-        self.types = types  # Public; mutable anytime.
+        self.arrests = arrests  # Public; mutable anytime.
+        self.crimes = primary_list  # Public; mutable anytime.
+        self.primary = primary
         self.__hardship = hardship
         self.__income = income
         self.value = plot_value  # Public; mutable anytime.
@@ -83,6 +88,7 @@ class CommunityArea(object):
     @property
     def number(self):
         return self.__number
+
     @property
     def color(self):
         '''An RGB color list.'''
@@ -113,13 +119,6 @@ class CommunityArea(object):
 
 
 
-# Define a function to initiate a series of CommunityArea objects.
-def MakeCommunities(data):
-    '''Given two columns of data, returns a
-    list of CommunityArea instances.
-    '''
-
-    return None
 np.unique(crimeses[[cname]].values).tolist()
 namepd = np.unique(crimeses[[cname]].values).tolist()
 # (a) Calculate the number of crimes in each Community Area in 2015.
@@ -130,11 +129,67 @@ crimeses = crimes.merge(ses, left_on=community,
                         how='outer') # I want that indicator oprion
                                      # in version 0.17.0. Grrr...
 crimes_by_community = crimeses.groupby(cname)
+
+# Define a function to initiate a series of CommunityArea objects.
 variables = crimeses.columns.tolist()
-for comm in crimes_by_community.groups.keys(){
+def get_fx_from_param(param_to_var, param):
+    '''
+    Helper for MakeCommunities parameter compiler:
+        - Returns the appropriate Grouby attribute for
+          each parameter.
+    '''
+    if param in MEANS_INDEX:
+        return comm_slice[param_to_var[param]].mean()
+    elif param in COUNTS_INDEX:
+        return comm_slice[param_to_var[param]].count()
+    elif param in SUMS_INDEX:
+        return comm_slice[param_to_var[param]].sum()
+    elif param in TOPS_INDEX:
+        if param in UNIQUE_INDEX:
+            return comm_slice[param_to_var[param]].unique().tolist()
+        return comm_slice[param_to_var[param]].describe()['top']
 
 
-}
+def MakeCommunities(data):
+    '''Given two columns of data, returns a
+    list of CommunityArea instances.
+    '''
+    include_list = [cname, community, arrest, primary, hardship, pcincome]
+    parameters = ['NAME', 'NUMBER', 'ARRESTS', 'COUNT',
+                  'CRIMES', 'TOP', 'HARDSHIP', 'INCOME']
+    param_to_var = {'NAME' : cname, 'NUMBER' : community,
+                    'ARRESTS' : arrest, 'COUNT' : community,
+                    'CRIMES' : primary, 'TOP' : primary,
+                    'HARDSHIP' : hardship, 'INCOME' : pcincome}
+
+    communities = []
+    MEANS_INDEX = [parameters.index('NUMBER'), parameters.index('HARDSHIP'),
+                   parameters.index('INCOME')]
+    COUNTS_INDEX = [parameters.index('COUNT')]
+    SUMS_INDEX = [parameters.index('ARRESTS')]
+    TOPS_INDEX = [parameters.index('NAME'), parameters.index('TOP')]
+    UNIQUE_INDEX = [parameters.index('CRIMES')]
+    count = 0
+    mean = 1
+    top = 'top'
+    for comm in crimes_by_community.groups.keys(){
+        # crimes_by_community.groups[comm][0]
+        param_to_value = {}
+        comm_slice = crimes_by_community.get_group[comm]
+        NAME = crimes_by_community.get_group(comm)[cname].describe()[top]
+        NUMBER = crimes_by_community.get_group[comm][community].describe()[mean]
+        ARRESTS = crimes_by_community.get_group(comm)[arrest].sum()
+        COUNT = crimes_by_community.get_group(comm)[community].describe()[count]
+        CRIMES = crimes_by_community.get_group(comm)[primary].unique().tolist()
+        TOP = crimes_by_community.get_group(comm)[primary].describe()[top]
+        HARDSHIP = crimes_by_community.get_group[comm][hardship].describe()[mean]
+        INCOME = crimes_by_community.get_group[comm][pcincome].describe()[mean]
+        new_community = CommunityArea(NAME, NUMBER, COUNT,
+                                      CRIMES)
+    }
+
+    return None
+
 community_crime_count = crimes_by_community['ID'].agg('count')
 community_crime_count.sort(ascending=False)
 community_area_crime = pd.DataFrame({'Crime Count': community_crime_count})
