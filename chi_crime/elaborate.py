@@ -338,7 +338,7 @@ class CityData(object):
            '''
         if isinstance(name_or_number, (str, int, float)):
             for comm in self.communities:
-                if isinstance(name_or_number, string):
+                if isinstance(name_or_number, str):
             		if comm.name == name_or_number:
             			return comm
                 else:
