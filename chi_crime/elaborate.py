@@ -317,6 +317,8 @@ pcincome = 'PER CAPITA INCOME '
 hardship = 'HARDSHIP INDEX'
 communityses = "Community Area Number"
 cname = "COMMUNITY AREA NAME"
+
+
 # Question 1: Crime counts and socioeconomics
 #
 # Download the crime data for all of the year 2015. Also download the socioeconomic data.
@@ -345,8 +347,11 @@ chi = CityData(filenames, crime_data, ses_data)
 # COMMUNITIES = MakeCommunities(crimes_by_community)
 #
 # variables = crimeses.columns.tolist()
+# crimes_by_community = self.__crimeses.groupby(cname)
+# self.crimes_by_community = crimes_by_community
+# by_community = chi.crimeses
 
-community_crime_count = chi.crimes_by_community['ID'].agg('count')
+community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count')
 community_crime_count.sort(ascending=False)
 print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
      format(community_crime_count.index[0],
@@ -380,7 +385,11 @@ community_crime_dailyunstack.fillna(0, inplace=True)
 interesting_places = ['Hyde Park', 'Woodlawn', 'Kenwood', 'Little Village',
                       'Pilsen', 'Washington Park', 'Lake View', 'Roseland',
                       'Chinatown', 'Austin', 'Edison Park']
-community_crime_dailyunstack[interesting_places].plot()
+hp = ['Hyde Park']
+for place in interesting_places:
+    community_crime_dailyunstack.loc[0, [place]]
+community_crime_dailyunstack.loc[:, hp].plot()
+# community_crime_dailyunstack[interesting_places].plot()
 # community_crime_dailyunstack.loc(interesting_places).plot()
 # community_crime_dailyunstack.iloc(:,1).plot()
 # plt.show()
