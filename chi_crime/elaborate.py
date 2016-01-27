@@ -106,15 +106,15 @@ def get_fx_from_param(dataframe, communityname, param_to_var, param):
     UNIQUE_INDEX = ['CRIMES']
 
     if param in MEANS_INDEX:
-        return dataframe.get_group[communityname][param_to_var[param]].mean()
+        return dataframe.get_group(communityname)[param_to_var[param]].mean()
     elif param in COUNTS_INDEX:
-        return dataframe.get_group[communityname][param_to_var[param]].count()
+        return dataframe.get_group(communityname)[param_to_var[param]].count()
     elif param in SUMS_INDEX:
-        return dataframe.get_group[communityname][param_to_var[param]].sum()
+        return dataframe.get_group(communityname)[param_to_var[param]].sum()
     elif param in TOPS_INDEX:
         if param in UNIQUE_INDEX:
-            return dataframe.get_group[communityname][param_to_var[param]].unique().tolist()
-        return dataframe.get_group[communityname][param_to_var[param]].describe()['top']
+            return dataframe.get_group(communityname)[param_to_var[param]].unique().tolist()
+        return dataframe.get_group(communityname)[param_to_var[param]].describe()['top']
 
 
 class CityData(object):
