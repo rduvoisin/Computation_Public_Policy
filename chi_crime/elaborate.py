@@ -336,7 +336,7 @@ class CityData(object):
            that corresponds to the supplied name
            or community area number.
            '''
-        if isinstance(name_or_number, (int, float)):
+        if isinstance(name_or_number, (str, int, float)):
             for comm in self.communities:
                 if isinstance(name_or_number, string):
             		if comm.name == name_or_number:
@@ -435,7 +435,7 @@ color_list = get_nice_colors(len(interesting_places))
 color_list = color_list.tolist()
 community_colors_dict = {}
 for n in interesting_places:
-    print(chi.get_community(n).name, chi.get_community(n).number)
+    print chi.get_community(n).name, chi.get_community(n).number
     print(chi.get_community(n).color)
     community_colors_dict[chi.get_community(n).name] = chi.get_community(n).color
 
