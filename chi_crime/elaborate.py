@@ -12,11 +12,15 @@
 # our analysis by including data about socioeconomics, population, and police stations.
 #
 # To get credit for your answer, you must show in full the code that produced the answer.
+from __future__ import division
 import os
 import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import operator
+import matplotlib.cm as cm
+
 
 # Make a community area class to hold certain attributes stable in plottling.
 class CommunityArea(object):
@@ -89,6 +93,29 @@ def get_nice_colors(n_colors):
     '''Helper for MakeCommunities for fixed community colors.'''
     return cm.Accent([1 - (i/n_colors) for i in range(n_colors)])
 
+def get_fx_from_param(dataframe, communityname, param_to_var, param):
+    '''
+    Helper for MakeCommunities parameter compiler:
+        - Returns the appropriate Grouby attribute for
+          each parameter.
+    '''
+    MEANS_INDEX = ['NUMBER', 'HARDSHIP','INCOME']
+    COUNTS_INDEX = ['COUNT']
+    SUMS_INDEX = ['ARRESTS']
+    TOPS_INDEX = ['NAME', 'TOP']
+    UNIQUE_INDEX = ['CRIMES']
+
+    if param in MEANS_INDEX:
+        return dataframe.get_group[communityname][param_to_var[param]].mean()
+    elif param in COUNTS_INDEX:
+        return dataframe.get_group[communityname][param_to_var[param]].count()
+    elif param in SUMS_INDEX:
+        return dataframe.get_group[communityname][param_to_var[param]].sum()
+    elif param in TOPS_INDEX:
+        if param in UNIQUE_INDEX:
+            return dataframe.get_group[communityname][param_to_var[param]].unique().tolist()
+        return dataframe.get_group[communityname][param_to_var[param]].describe()['top']
+
 
 class CityData(object):
     '''
@@ -114,7 +141,6 @@ class CityData(object):
         self.__crime = self.__MakeCrimeDF(crime)
         self.__ses = self.__MakeSESDF(ses)
         self.__crimeses, self.variables = self.merge_crime_ses()
-        # self.variables = get_varlist
         self.working = working
         self.communities = []
         self.crimes_by_community = None
@@ -131,7 +157,6 @@ class CityData(object):
         print('filenames ', filenames, ' to ', self.__filenames)
 
 
-
     def __HoldAllDFs(self):
         print('self', self.__filenames)
         datasets = []
@@ -142,37 +167,33 @@ class CityData(object):
 
 
     def __MakeCrimeDF(self, crime):
-        print('crime file', crime, 'self files', self.__filenames)
         for filename in self.__filenames:
             if filename == crime:
                 return pd.read_csv(crime, parse_dates=['Date'])
 
 
     def __MakeSESDF(self, ses):
-        print('ses file', ses, 'self files', self.__filenames)
         for filename in self.__filenames:
             if filename == ses:
                 return pd.read_csv(ses)
 
 
     def merge_crime_ses(self):
-        # if self.__crime:
-        #     if self.__ses:
         # Presume only ses data
         # contain comprehensive community areas.
-        merged =  self.__crime.merge(self.__ses, left_on=community,
-                                right_on=communityses,
-                                how='outer') # I want that indicator oprion
-                                             # in version 0.17.0. Grrr...
-        #  = merged[cname].unique().tolist()
-        varlist = merged[cname].unique().tolist()
-        print('varlist', varlist)
-        return merged, varlist
+        if not self.__crime.empty and not self.__ses.empty:
+            merged =  self.__crime.merge(self.__ses, left_on=community,
+                                    right_on=communityses,
+                                    how='outer') # I want that indicator oprion
+                                                 # in version 0.17.0. Grrr...
+            varlist = merged[cname].unique().tolist()
+            print('varlist', varlist)
+            return merged, varlist
+
 
     def get_varlist(self):
-        if self.__crimeses:
+        if not self.__crimeses.empty:
             return self.__crimeses[cname].unique().tolist()
-
 
 
     @property
@@ -197,24 +218,6 @@ class CityData(object):
             self.working = new_data
 
 
-    def get_fx_from_param(self, param_to_var, param):
-        '''
-        Helper for MakeCommunities parameter compiler:
-            - Returns the appropriate Grouby attribute for
-              each parameter.
-        '''
-        if param in MEANS_INDEX:
-            return comm_slice[param_to_var[param]].mean()
-        elif param in COUNTS_INDEX:
-            return comm_slice[param_to_var[param]].count()
-        elif param in SUMS_INDEX:
-            return comm_slice[param_to_var[param]].sum()
-        elif param in TOPS_INDEX:
-            if param in UNIQUE_INDEX:
-                return comm_slice[param_to_var[param]].unique().tolist()
-            return comm_slice[param_to_var[param]].describe()['top']
-
-
     def MakeCommunities(self):
         '''
         Stores a series of CommunityArea objects within CityData.
@@ -223,7 +226,8 @@ class CityData(object):
           collapsed summary statistics.
         - Appends each CommunityArea object to CityData.communities list.
         '''
-        if self.__crimeses:
+
+        if not self.__crimeses.empty:
 
             crimes_by_community = self.__crimeses.groupby(cname)
             self.crimes_by_community = crimes_by_community
@@ -241,6 +245,8 @@ class CityData(object):
             SUMS_INDEX = ['ARRESTS']
             TOPS_INDEX = ['NAME', 'TOP']
             UNIQUE_INDEX = ['CRIMES']
+
+            print(parameters)
             # count = 0
             # mean = 1
             # top = 'top'
@@ -252,10 +258,9 @@ class CityData(object):
             for comm in areas_list:
                 # crimes_by_community.groups[comm][0]
                 param_to_value = {}
-                comm_slice = crimes_by_community.get_group[comm]
 
                 for comm_char in parameters:
-                    param_to_value[comm_char] = self.get_fx_from_param(param_to_var, comm_char)
+                    param_to_value[comm_char] = get_fx_from_param(crimes_by_community, comm, param_to_var, comm_char)
 
                 order_number = areas_list.index(comm)
                 if order_number % 2 == 0:
@@ -318,7 +323,7 @@ hardship = 'HARDSHIP INDEX'
 communityses = "Community Area Number"
 cname = "COMMUNITY AREA NAME"
 
-
+# main
 # Question 1: Crime counts and socioeconomics
 #
 # Download the crime data for all of the year 2015. Also download the socioeconomic data.
@@ -329,28 +334,16 @@ crime_data = filenames[0]
 ses_data = filenames[1]
 
 chi = CityData(filenames, crime_data, ses_data)
+chi.MakeCommunities()
+crimes_by_community = chi.crimeses.groupby(cname)
+areas_list = crimes_by_community.groups.keys()
 
 # crimes = pd.read_csv('2015_crimes.csv', parse_dates=['Date'])
 # ses = pd.read_csv('Census_Data_Selected_socioeconomic_indicators_in_Chicago_2008_2012.csv')
 
 
-
 # (a) Calculate the number of crimes in each Community Area in 2015.
-# Only presume that ses contains comprehensive community areas.
-# Merge crimes by community area:
-# crimeses = crimes.merge(ses, left_on=community,
-                        # right_on=communityses,
-                        # how='outer') # I want that indicator oprion
-                                     # in version 0.17.0. Grrr...
-
-#
-# COMMUNITIES = MakeCommunities(crimes_by_community)
-#
-# variables = crimeses.columns.tolist()
-# crimes_by_community = self.__crimeses.groupby(cname)
-# self.crimes_by_community = crimes_by_community
-# by_community = chi.crimeses
-
+cnames = chi.crimeses[cname].unique().tolist()
 community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count')
 community_crime_count.sort(ascending=False)
 print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
@@ -358,7 +351,7 @@ print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({}
             community_crime_count[0],
             community_crime_count.index[76],
             community_crime_count[76]))
-# Plot Question 1.
+# Plot Question 1a.
 plt.close('all')
 fig = plt.figure(figsize=(10,12))
 doc = 'crime_count_bycommunity.png'
@@ -382,12 +375,24 @@ community_crime_dailycount = chi.crimeses.groupby([cname, 'Day'])
 community_crime_dailycount = community_crime_dailycount['ID'].agg('count')
 community_crime_dailyunstack = community_crime_dailycount.unstack(cname)
 community_crime_dailyunstack.fillna(0, inplace=True)
-interesting_places = ['Hyde Park', 'Woodlawn', 'Kenwood', 'Little Village',
-                      'Pilsen', 'Washington Park', 'Lake View', 'Roseland',
-                      'Chinatown', 'Austin', 'Edison Park']
+interesting_places = ['Hyde Park', 'South Chicago',
+                      'South Lawndale', 'Lower West Side',
+                      'Washington Park', 'Lake View', 'Roseland',
+                      'Armour Square', 'Austin', 'Edison Park']
+["{} not in list".format(place) for place in interesting_places if place not in cnames]
 hp = ['Hyde Park']
+color_list = get_nice_colors(len(interesting_places))
+color_list = color_list.tolist()
+community_colors_dict = {}
+for n in interesting_places:
+    community_colors_dict[chi.get_community(n).name] = chi.get_community(n).color
+
+community_colors_dict.items()
+# community_colors_dict = [{chi.get_community(n).name : chi.get_community(n).color} for n in interesting_places]
+community_crime_dailyunstack[interesting_places].plot(color=color_list) #, rotation=30)
+
 for place in interesting_places:
-    community_crime_dailyunstack.loc[0, [place]]
+    community_crime_dailyunstack.loc[:, place].plot()
 community_crime_dailyunstack.loc[:, hp].plot()
 # community_crime_dailyunstack[interesting_places].plot()
 # community_crime_dailyunstack.loc(interesting_places).plot()
