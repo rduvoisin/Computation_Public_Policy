@@ -39,18 +39,20 @@ class CommunityArea(object):
     - value - mutable anytime.
     '''
 
-    def __init__(self, name, number, crime_count, arrests, primary_list=[],
-                 primary=None, hardship=None, income=None, color=None, plot_value=0):
+    def __init__(self, name, number, crime_count, arrests_count,
+                 primary_list=None, primary_type=None, hardship=None,
+                 income=None, color=None, plot_value=None):
+
         self.__name = name
         self.__number = number
-        self.__color = color
         self.count = crime_count  # Public; mutable anytime.
-        self.arrests = arrests  # Public; mutable anytime.
-        self.crimes = primary_list  # Public; mutable anytime.
-        self.primary = primary
+        self.arrests = arrests_count  # Public; mutable anytime.
+        self._crimes = primary_list  # Public; mutable anytime.
+        self._primary = primary_type
         self.__hardship = hardship
         self.__income = income
-        self.value = plot_value  # Public; mutable anytime.
+        self.__color = color
+        self._value = plot_value  # Public; mutable anytime.
 
     @property
     def name(self):
@@ -59,14 +61,25 @@ class CommunityArea(object):
     @property
     def number(self):
         return self.__number
-        
+
     @property
     def crimes(self):
-        return self.crimes
-        
+        return self._crimes
+
+    @crimes.setter
+    def crimes(self, list_of_crimes):
+        if isinstance(list_of_crimes,(str, list)):
+            if isinstance(list_of_crimes,str):
+                list_of_crimes = [list_of_crimes]
+            self._crimes = list_of_crimes
+
     @property
     def primary(self):
-        return self.primary
+        return self._primary
+
+    @primary.setter
+    def primary(self, primary_string):
+        self._primary = primary_string
 
     @property
     def color(self):
@@ -96,6 +109,15 @@ class CommunityArea(object):
         if isinstance(income, (int, float)):
             self.__income = income
 
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        if isinstance(val, (int, float)):
+            self._value = val
+
 
 def get_nice_colors(n_colors):
     '''Helper for MakeCommunities for fixed community colors.'''
@@ -122,10 +144,10 @@ def get_fx_from_param(dataframe, communityname, param_to_var, param):
         return dataframe.get_group(communityname)[param_to_var[param]].sum()
     elif param in TOPS_INDEX:
         print('TOPS', param)
-        if param in UNIQUE_INDEX:
-            return dataframe.get_group(communityname)[param_to_var[param]].unique().tolist()
         if communityname != 'CHICAGO':
             return dataframe.get_group(communityname)[param_to_var[param]].describe()['top']
+    elif param in UNIQUE_INDEX:
+        return dataframe.get_group(communityname)[param_to_var[param]].unique().tolist()
 
 
 class CityData(object):
@@ -244,7 +266,7 @@ class CityData(object):
             crimes_by_community = self.__crimeses.groupby(cname)
             self.crimes_by_community = crimes_by_community
 
-            parameters = ['NAME', 'NUMBER', 'ARRESTS', 'COUNT',
+            parameters = ['NAME', 'NUMBER', 'COUNT', 'ARRESTS',
                           'CRIMES', 'TOP', 'HARDSHIP', 'INCOME']
 
             param_to_var = {'NAME' : cname, 'NUMBER' : community,
@@ -275,22 +297,36 @@ class CityData(object):
                     param_to_value[comm_char] = get_fx_from_param(crimes_by_community, comm, param_to_var, comm_char)
 
                 order_number = areas_list.index(comm)
-                
+
                 if order_number % 2 == 0:
                     color = community_colors[order_number]
                 else:
                     color = community_colors[-order_number]
-				
-				print('dict:', param_to_value.iteritems())
-				
+
+                # print('dict', param_to_value.items())
+                import pdb; pdb.set_trace()
+
+
+                for k in param_to_value.keys():
+                    print k, param_to_value[k]
+
+                print 'color', color
+
                 new_community = CommunityArea(comm, param_to_value['NUMBER'],
                                               param_to_value['COUNT'],
-                                              param_to_value['ARRESTS'],
-                                              param_to_value['CRIMES'],
-                                              param_to_value['TOP'],
-                                              param_to_value['HARDSHIP'],
-                                              param_to_value['INCOME'],
-                                              color)
+                                              param_to_value['ARRESTS'])
+
+                new_community.crimes = param_to_value['CRIMES']
+                new_community.primary = param_to_value['TOP']
+                new_community.hardship = param_to_value['HARDSHIP']
+                new_community.income = param_to_value['INCOME']
+                new_community.color = color
+                                            #   param_to_value['CRIMES'],
+                                            #   param_to_value['TOP'],
+                                            #   param_to_value['HARDSHIP'],
+                                            #   param_to_value['INCOME'], color)
+
+                print('ADDED', comm)
                 self.communities.append(new_community)
 
 
@@ -305,7 +341,7 @@ class CityData(object):
                 if isinstance(name_or_number, string):
             		if comm.name == name_or_number:
             			return comm
-                else:  	
+                else:
                     if comm.number == name_or_number:
                     	return comm
 
