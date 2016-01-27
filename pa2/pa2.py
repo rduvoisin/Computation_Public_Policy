@@ -59,6 +59,14 @@ class CommunityArea(object):
     @property
     def number(self):
         return self.__number
+        
+    @property
+    def crimes(self):
+        return self.crimes
+        
+    @property
+    def primary(self):
+        return self.primary
 
     @property
     def color(self):
@@ -267,12 +275,14 @@ class CityData(object):
                     param_to_value[comm_char] = get_fx_from_param(crimes_by_community, comm, param_to_var, comm_char)
 
                 order_number = areas_list.index(comm)
+                
                 if order_number % 2 == 0:
                     color = community_colors[order_number]
                 else:
                     color = community_colors[-order_number]
-
-
+				
+				print('dict:', param_to_value.iteritems())
+				
                 new_community = CommunityArea(comm, param_to_value['NUMBER'],
                                               param_to_value['COUNT'],
                                               param_to_value['ARRESTS'],
@@ -290,7 +300,7 @@ class CityData(object):
            that corresponds to the supplied name
            or community area number.
            '''
-        if isinstance(name_or_number, (int, float)) and self.communities:
+        if isinstance(name_or_number, (int, float)):
             for comm in self.communities:
                 if isinstance(name_or_number, string):
             		if comm.name == name_or_number:
