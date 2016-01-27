@@ -106,15 +106,18 @@ def get_fx_from_param(dataframe, communityname, param_to_var, param):
     UNIQUE_INDEX = ['CRIMES']
 
     if param in MEANS_INDEX:
+        print(dataframe.get_group(communityname)[param_to_var[param]].mean())
         return dataframe.get_group(communityname)[param_to_var[param]].mean()
     elif param in COUNTS_INDEX:
         return dataframe.get_group(communityname)[param_to_var[param]].count()
     elif param in SUMS_INDEX:
         return dataframe.get_group(communityname)[param_to_var[param]].sum()
     elif param in TOPS_INDEX:
+        print('TOPS', param)
         if param in UNIQUE_INDEX:
             return dataframe.get_group(communityname)[param_to_var[param]].unique().tolist()
-        return dataframe.get_group(communityname)[param_to_var[param]].describe()['top']
+        if communityname != 'CHICAGO':
+            return dataframe.get_group(communityname)[param_to_var[param]].describe()['top']
 
 
 class CityData(object):
@@ -218,7 +221,7 @@ class CityData(object):
             self.working = new_data
 
 
-    def MakeCommunities(self):
+    def MakeCommunities(self, replace=None):
         '''
         Stores a series of CommunityArea objects within CityData.
         - Builds crime and ses by community area groupby object.
@@ -228,6 +231,8 @@ class CityData(object):
         '''
 
         if not self.__crimeses.empty:
+            if replace:
+                self.communities = []
 
             crimes_by_community = self.__crimeses.groupby(cname)
             self.crimes_by_community = crimes_by_community
@@ -258,10 +263,12 @@ class CityData(object):
             for comm in areas_list:
                 # crimes_by_community.groups[comm][0]
                 param_to_value = {}
-
+                print('community in dev...', comm)
                 for comm_char in parameters:
+                    print(comm_char, '...')
                     param_to_value[comm_char] = get_fx_from_param(crimes_by_community, comm, param_to_var, comm_char)
-
+                    print('\ndict with {}'.format(comm), param_to_value.items())
+                print('\nFINAL dict', param_to_value.items())
                 order_number = areas_list.index(comm)
                 if order_number % 2 == 0:
                     color = community_colors[order_number]
