@@ -161,7 +161,6 @@ class CityData(object):
 
 
     def __HoldAllDFs(self):
-        print('self', self.__filenames)
         datasets = []
         for filename in self.__filenames:
             newdataset = pd.read_csv(filename)
@@ -265,10 +264,8 @@ class CityData(object):
                 param_to_value = {}
                 print('community in dev...', comm)
                 for comm_char in parameters:
-                    print(comm_char, '...')
                     param_to_value[comm_char] = get_fx_from_param(crimes_by_community, comm, param_to_var, comm_char)
-                    print('\ndict with {}'.format(comm), param_to_value.items())
-                print('\nFINAL dict', param_to_value.items())
+
                 order_number = areas_list.index(comm)
                 if order_number % 2 == 0:
                     color = community_colors[order_number]
@@ -294,13 +291,13 @@ class CityData(object):
            or community area number.
            '''
         if isinstance(name_or_number, (int, float)) and self.communities:
-            if isinstance(name_or_number, string):
-                key = comm.name
-            else:
-                key = comm.number
             for comm in self.communities:
-                if key == name_or_number:
-                    return comm
+                if isinstance(name_or_number, string):
+            		if comm.name == name_or_number:
+            			return comm
+                else:  	
+                    if comm.number == name_or_number:
+                    	return comm
 
 # GLOBALS
 n = "ID"
@@ -392,6 +389,8 @@ color_list = get_nice_colors(len(interesting_places))
 color_list = color_list.tolist()
 community_colors_dict = {}
 for n in interesting_places:
+    print(chi.get_community(n).name, chi.get_community(n).number)
+    print(chi.get_community(n).color)
     community_colors_dict[chi.get_community(n).name] = chi.get_community(n).color
 
 community_colors_dict.items()
