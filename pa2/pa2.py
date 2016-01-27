@@ -433,15 +433,16 @@ interesting_places = ['Hyde Park', 'South Chicago',
 hp = ['Hyde Park']
 color_list = get_nice_colors(len(interesting_places))
 color_list = color_list.tolist()
-community_colors_dict = {}
+community_colors_list = []
 for n in interesting_places:
-    print chi.get_community(n).name, chi.get_community(n).number
-    print(chi.get_community(n).color)
-    community_colors_dict[chi.get_community(n).name] = chi.get_community(n).color
+    community_colors_list.append(chi.get_community(n).color)
+    # print chi.get_community(n).name, chi.get_community(n).number
+    # print(chi.get_community(n).color)
+    # community_colors_dict[chi.get_community(n).name] = chi.get_community(n).color
 
-community_colors_dict.items()
+# community_colors_dict.items()
 # community_colors_dict = [{chi.get_community(n).name : chi.get_community(n).color} for n in interesting_places]
-community_crime_dailyunstack[interesting_places].plot(color=color_list) #, rotation=30)
+community_crime_dailyunstack[interesting_places].plot(color=community_colors_list) #, rotation=30)
 
 for place in interesting_places:
     community_crime_dailyunstack.loc[:, place].plot()
