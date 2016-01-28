@@ -136,14 +136,12 @@ def get_fx_from_param(dataframe, communityname, param_to_var, param):
     UNIQUE_INDEX = ['CRIMES']
 
     if param in MEANS_INDEX:
-        print(dataframe.get_group(communityname)[param_to_var[param]].mean())
         return dataframe.get_group(communityname)[param_to_var[param]].mean()
     elif param in COUNTS_INDEX:
         return dataframe.get_group(communityname)[param_to_var[param]].count()
     elif param in SUMS_INDEX:
         return dataframe.get_group(communityname)[param_to_var[param]].sum()
     elif param in TOPS_INDEX:
-        print('TOPS', param)
         if communityname != 'CHICAGO':
             return dataframe.get_group(communityname)[param_to_var[param]].describe()['top']
     elif param in UNIQUE_INDEX:
@@ -219,7 +217,6 @@ class CityData(object):
                                     how='outer') # I want that indicator oprion
                                                  # in version 0.17.0. Grrr...
             varlist = merged[cname].unique().tolist()
-            print('varlist', varlist)
             return merged, varlist
 
 
@@ -280,15 +277,11 @@ class CityData(object):
             TOPS_INDEX = ['NAME', 'TOP']
             UNIQUE_INDEX = ['CRIMES']
 
-            print(parameters)
-            # count = 0
-            # mean = 1
-            # top = 'top'
             community_colors = get_nice_colors(crimes_by_community.ngroups)
             community_colors = community_colors.tolist()
 
             areas_list = crimes_by_community.groups.keys()
-
+            areas_list.sort()
             for comm in areas_list:
                 # crimes_by_community.groups[comm][0]
                 param_to_value = {}
@@ -297,20 +290,14 @@ class CityData(object):
                     param_to_value[comm_char] = get_fx_from_param(crimes_by_community, comm, param_to_var, comm_char)
 
                 order_number = areas_list.index(comm)
+                color = community_colors[order_number]
 
-                if order_number % 2 == 0:
-                    color = community_colors[order_number]
-                else:
-                    color = community_colors[-order_number]
+                # if order_number % 2 == 0:
+                #     color = community_colors[order_number]
+                # else:
+                #     color = community_colors[-order_number]
 
                 # print('dict', param_to_value.items())
-                import pdb; pdb.set_trace()
-
-
-                for k in param_to_value.keys():
-                    print k, param_to_value[k]
-
-                print 'color', color
 
                 new_community = CommunityArea(comm, param_to_value['NUMBER'],
                                               param_to_value['COUNT'],
@@ -385,12 +372,6 @@ ses_data = filenames[1]
 
 chi = CityData(filenames, crime_data, ses_data)
 chi.MakeCommunities()
-crimes_by_community = chi.crimeses.groupby(cname)
-areas_list = crimes_by_community.groups.keys()
-
-# crimes = pd.read_csv('2015_crimes.csv', parse_dates=['Date'])
-# ses = pd.read_csv('Census_Data_Selected_socioeconomic_indicators_in_Chicago_2008_2012.csv')
-
 
 # (a) Calculate the number of crimes in each Community Area in 2015.
 cnames = chi.crimeses[cname].unique().tolist()
@@ -410,7 +391,6 @@ community_crime_count.plot(kind='bar',
 fig.savefig(doc)
 plt.close('all')
 
-from operator import methodcaller
 # Plot Daily Counts on select communities
 def to_day(timestamp):
     return timestamp.replace(minute=0,hour=0, second=0)
@@ -419,7 +399,7 @@ def get_date(date):
     return date.to_datetime #(format='%Y%m%d', errors='coerce')
 s = pd.Series(chi.crimeses['Date'])
 d = s[:258478].map(lambda x: x.strftime('%Y-%m-%d'))
-# d[258478] = s[258478:258478].map(lambda x: x.strftime('%Y-%m-%d'))
+
 chi.crimeses['Day'] = d.to_frame()
 community_crime_dailycount = chi.crimeses.groupby([cname, 'Day'])
 community_crime_dailycount = community_crime_dailycount['ID'].agg('count')
@@ -429,31 +409,36 @@ interesting_places = ['Hyde Park', 'South Chicago',
                       'South Lawndale', 'Lower West Side',
                       'Washington Park', 'Lake View', 'Roseland',
                       'Armour Square', 'Austin', 'Edison Park']
-["{} not in list".format(place) for place in interesting_places if place not in cnames]
-hp = ['Hyde Park']
-color_list = get_nice_colors(len(interesting_places))
-color_list = color_list.tolist()
+# ["{} not in list".format(place) for place in interesting_places if place not in cnames]
+# hp = ['Hyde Park']
+# color_list = get_nice_colors(len(interesting_places))
+# color_list = color_list.tolist()
 community_colors_list = []
 for n in interesting_places:
     community_colors_list.append(chi.get_community(n).color)
-    # print chi.get_community(n).name, chi.get_community(n).number
-    # print(chi.get_community(n).color)
-    # community_colors_dict[chi.get_community(n).name] = chi.get_community(n).color
-
-# community_colors_dict.items()
-# community_colors_dict = [{chi.get_community(n).name : chi.get_community(n).color} for n in interesting_places]
 community_crime_dailyunstack[interesting_places].plot(color=community_colors_list) #, rotation=30)
+# too much data, collapse into week data
 
-for place in interesting_places:
-    community_crime_dailyunstack.loc[:, place].plot()
-community_crime_dailyunstack.loc[:, hp].plot()
-# community_crime_dailyunstack[interesting_places].plot()
-# community_crime_dailyunstack.loc(interesting_places).plot()
-# community_crime_dailyunstack.iloc(:,1).plot()
-# plt.show()
-# crimes_by_community = crimes.groupby('Community Area')
-# print('crimes_by_community.groups\n',crimes_by_community.groups)
+day = 'Day'
+def get_week(date):
+    return date.dt.week
+
+# work = chi.crimeses
+# work['Week'] = work['Date'][0 : 258478].apply(pd.datetools.normalize_date)
+# work['Week']
+# weekly = pd.Series(work['Week'])
+# weekly.dt.week
 #
+# community_crime_dailyunstack['Week'] = \
+#     community_crime_dailyunstack['Week'][0 : 258478].apply(pd.datetools.normalize_date)
+# community_crime_dailyunstack['Date'][0 : 258478].apply(pd.datetools.normalize_date)
+#
+# community_crime_dailyunstack['Week'] = \
+#     community_crime_dailyunstack['Week'].apply(pd.week)
+# week = 'Week'
+# community_crime_dailyunstack[day, week]
+# community_crime_dailyunstack[day, week]
+# community_crime_weeklystack[day] = community_crime_dailyunstack[]
 # (b) Sort the Community Areas by 2015 crime count. Which Community Area (by name) has the highest crime count. The lowest?
 #
 # (c) Create a table whose rows are days in the year and columns are the 77 Community Area crime counts. Select a few Communities that you are interested and plot time series.
