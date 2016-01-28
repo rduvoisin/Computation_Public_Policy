@@ -374,8 +374,10 @@ chi = CityData(filenames, crime_data, ses_data)
 chi.MakeCommunities()
 
 # (a) Calculate the number of crimes in each Community Area in 2015.
+# (b) Sort the Community Areas by 2015 crime count.
+# Which Community Area (by name) has the highest crime count. The lowest?
 cnames = chi.crimeses[cname].unique().tolist()
-community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count')
+community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count').copy
 community_crime_count.sort(ascending=False)
 print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
      format(community_crime_count.index[0],
@@ -383,7 +385,9 @@ print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({}
             community_crime_count.index[76],
             community_crime_count[76]))
 
-# Plot Question 1.a)
+
+
+# Plot Question 1. b)
 plt.close('all')
 fig = plt.figure(figsize=(10,12))
 doc = 'crime_count_bycommunity.png'
@@ -391,77 +395,100 @@ t = 'Crime Counts by Community Area, 2015'
 plt.title(t)
 
 community_colors_list = []
-community_labels = []
 for n in community_crime_count.index:
     community_colors_list.append(chi.get_community(n).color)
-    community_labels.append(chi.get_community(n).color)
 
 xs = np.arange(community_crime_count.size)
 w = 0.9
 community_crime_count.plot(kind='barh', width=w, fontsize=8,
-                           grid=True, color=community_colors_list) #, labels=crimes[cname]
+                           grid=True, color=community_colors_list)
 plt.gca().invert_yaxis()
 
 plt.gcf().tight_layout()
 fig.savefig(doc)
 
-# Plot Daily Counts on select communities
-def to_day(timestamp):
-    return timestamp.replace(minute=0,hour=0, second=0)
-
-def get_date(date):
-    return date.to_datetime #(format='%Y%m%d', errors='coerce')
+# (c) Create a table whose rows are days in the year and columns are the
+# 77 Community Area crime counts. Select a few Communities
+# that you are interested and plot time series.
 s = pd.Series(chi.crimeses['Date'])
 d = s[:258478].map(lambda x: x.strftime('%Y-%m-%d'))
 
 chi.crimeses['Day'] = d.to_frame()
-community_crime_dailycount = chi.crimeses.groupby([cname, 'Day'])
-community_crime_dailycount = community_crime_dailycount['ID'].agg('count')
-community_crime_dailyunstack = community_crime_dailycount.unstack(cname)
-community_crime_dailyunstack.fillna(0, inplace=True)
+# Table = Pivot
 interesting_places = ['Hyde Park', 'South Chicago',
                       'South Lawndale', 'Lower West Side',
                       'Washington Park', 'Lake View', 'Roseland',
                       'Armour Square', 'Austin', 'Edison Park']
-# ["{} not in list".format(place) for place in interesting_places if place not in cnames]
-# hp = ['Hyde Park']
-# color_list = get_nice_colors(len(interesting_places))
-# color_list = color_list.tolist()
+
+daily_table = chi.crimeses[['ID', cname, 'Day']].copy()
+table = pd.pivot_table(daily_table, columns=cname, index=['Day'], aggfunc='count')
+print table.to_string(na_rep ='')
+daily_table = daily_table[daily_table[cname].isin(interesting_places)]
+table = pd.pivot_table(daily_table, columns=cname, index=['Day'], aggfunc='count')
+print table.to_string(na_rep ='')
+
+# Plot Daily Counts on select communities
+community_crime_dailycount = chi.crimeses.groupby([cname, 'Day'])
+community_crime_dailycount = community_crime_dailycount['ID'].agg('count')
+community_crime_dailyunstack = community_crime_dailycount.unstack(cname)
+community_crime_dailyunstack.fillna(0, inplace=True)
+
 community_colors_list = []
 for n in interesting_places:
     community_colors_list.append(chi.get_community(n).color)
 
-fig = plt.figure(figsize=(12,10))
-# title = 'Daily Crime Counts by Community Area, 2015'
+
+fig, ax = plt.subplots(figsize=(20,10))
+t = 'Daily Crime Counts by Community Area, 2015'
 doc = 'daily_crime_count_bycommunity.png'
-community_crime_dailyunstack[interesting_places].plot(color=community_colors_list,
-                                                      title='Daily Crime Counts by Community Area, 2015')
+
+community_crime_dailyunstack[interesting_places].plot(ax=ax, rot=90,
+                                                      color=community_colors_list, title=t)
+plt.gcf().tight_layout()
 fig.savefig(doc)
-# too much data, collapse into week data
 
-day = 'Day'
-def get_week(date):
-    return date.dt.week
+# Too busy, smooth into week data
+month_dict = {1: 'January', 2:'February', 3:'March', 4:'April',
+              5:'May', 6: 'June', 7: 'July', 8: 'August', 9:'September',
+              10: 'October', 11:'November', 12:'December'}
 
-# work = chi.crimeses
-# work['Week'] = work['Date'][0 : 258478].apply(pd.datetools.normalize_date)
-# work['Week']
-# weekly = pd.Series(work['Week'])
-# weekly.dt.week
-#
-# community_crime_dailyunstack['Week'] = \
-#     community_crime_dailyunstack['Week'][0 : 258478].apply(pd.datetools.normalize_date)
-# community_crime_dailyunstack['Date'][0 : 258478].apply(pd.datetools.normalize_date)
-#
-# community_crime_dailyunstack['Week'] = \
-#     community_crime_dailyunstack['Week'].apply(pd.week)
-# week = 'Week'
-# community_crime_dailyunstack[day, week]
-# community_crime_dailyunstack[day, week]
-# community_crime_weeklystack[day] = community_crime_dailyunstack[]
-# (b) Sort the Community Areas by 2015 crime count. Which Community Area (by name) has the highest crime count. The lowest?
-#
-# (c) Create a table whose rows are days in the year and columns are the 77 Community Area crime counts. Select a few Communities that you are interested and plot time series.
+def get_value_label(value, value_dict=month_dict):
+    if str(value) == 'nan':
+        return None
+    return value_dict[int(value)]
+
+chi.crimeses['Week'] = chi.crimeses['Date'].dt.week
+chi.crimeses['Month'] = chi.crimeses['Date'].dt.month
+chi.crimeses['Month'] = chi.crimeses['Month'].apply(get_value_label)
+
+community_crime_dates = chi.crimeses[['ID', cname, community, 'Week', 'Month']]
+
+def print_full(x):
+    pd.set_option('display.max_rows', len(x))
+    print(x)
+    pd.reset_option('display.max_rows')
+
+community_crime_weeklycount = community_crime_dates.groupby([cname, 'Week'])
+community_crime_weeklycount = community_crime_weeklycount['ID'].agg('count')
+community_crime_weeklycountunstack = community_crime_weeklycount.unstack(cname)
+community_crime_weeklycountunstack.fillna(0, inplace=True)
+
+fig, ax = plt.subplots(figsize=(20,10))
+t = 'Weekly Crime Counts by Community Area, 2015'
+doc = 'weekly_crime_count_bycommunity.png'
+month_dict = {1: 'January', 2:'February', 3:'March', 4:'April',
+              5:'May', 6: 'June', 7: 'July', 8: 'August', 9:'September',
+              10: 'October', 11:'November', 12:'December'}
+community_crime_weeklycountunstack[interesting_places].plot(ax=ax, rot=90,
+                                                            xticks=community_crime_weeklycountunstack.index,
+                                                            color=community_colors_list,
+                                                            title=t)
+
+plt.gcf().tight_layout()
+fig.savefig(doc)
+
+
+
 #
 # (d) By joining with the socioeconomic data, create a scatter plot of crime counts against per capita income. Summarize the relationship in words.
 # Question 2: Community Area populations
@@ -469,7 +496,7 @@ def get_week(date):
 # Download the census block population data and the Community Area tracts mapping.
 #
 # (a) Join these together using the fact that the last six digits of the tract id in the mapping data correspond to the first six digits of the block id. However, the data portal has a bug: if the block starts with a zero, that digit is missing!
-#
+
 # (b) Calculate the total population in each Community Area.
 # Question 3: Crime rates
 #
