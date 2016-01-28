@@ -377,7 +377,7 @@ chi.MakeCommunities()
 # (b) Sort the Community Areas by 2015 crime count.
 # Which Community Area (by name) has the highest crime count. The lowest?
 cnames = chi.crimeses[cname].unique().tolist()
-community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count').copy
+community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count').copy()
 community_crime_count.sort(ascending=False)
 print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
      format(community_crime_count.index[0],
@@ -468,8 +468,11 @@ def print_full(x):
     print(x)
     pd.reset_option('display.max_rows')
 
-community_crime_weeklycount = community_crime_dates.groupby([cname, 'Week'])
+
+community_crime_weeklycount = community_crime_weeklycount.groupby([cname, 'Week'])
 community_crime_weeklycount = community_crime_weeklycount['ID'].agg('count')
+community_crime_weeklycount.sort_values(ascending=False, inplace=True)
+
 community_crime_weeklycountunstack = community_crime_weeklycount.unstack(cname)
 community_crime_weeklycountunstack.fillna(0, inplace=True)
 
@@ -479,7 +482,17 @@ doc = 'weekly_crime_count_bycommunity.png'
 month_dict = {1: 'January', 2:'February', 3:'March', 4:'April',
               5:'May', 6: 'June', 7: 'July', 8: 'August', 9:'September',
               10: 'October', 11:'November', 12:'December'}
-community_crime_weeklycountunstack[interesting_places].plot(ax=ax, rot=90,
+community_colors_list = []
+sort_interesting = []
+plot_interesting = []
+sort_interesting = [(chi.get_community(n).count, chi.get_community(n).name) for n in interesting_places]
+sort_interesting.sort()
+for (count, name) in sort_interesting:
+    plot_interesting.append(name)
+    community_colors_list.append(chi.get_community(name).color)
+
+
+community_crime_weeklycountunstack[plot_interesting].plot(ax=ax, rot=90,
                                                             xticks=community_crime_weeklycountunstack.index,
                                                             color=community_colors_list,
                                                             title=t)
@@ -487,10 +500,23 @@ community_crime_weeklycountunstack[interesting_places].plot(ax=ax, rot=90,
 plt.gcf().tight_layout()
 fig.savefig(doc)
 
+# Area Plot
+fig, ax = plt.subplots(figsize=(20,10))
+t = 'Weekly Crime Counts by Community Area, 2015'
+doc = 'weekly_crime_bycommunity_area.png'
+community_crime_weeklycountunstack[plot_interesting].plot(ax=ax, kind='area', color=community_colors_list, title=t)
+plt.gcf().tight_layout()
+fig.savefig(doc)
 
+# (d) By joining with the socioeconomic data,
+# create a scatter plot of crime counts against per capita income.
+# Summarize the relationship in words.
+fig, ax = plt.subplots(figsize=(20,10))
+t = 'Crime Counts on Per Capita Income'
+doc = 'crime_count_bypcincome.png'
+crime_pcincome = community_crime_weeklycount['ID'].agg('count')
+chi.crimeses.plot(kind='scatter', x='ID', y=pcincome)
 
-#
-# (d) By joining with the socioeconomic data, create a scatter plot of crime counts against per capita income. Summarize the relationship in words.
 # Question 2: Community Area populations
 #
 # Download the census block population data and the Community Area tracts mapping.
