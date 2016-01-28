@@ -528,7 +528,7 @@ def set_color_column(com_name):
     return chi.get_community(com_name).color
 
 # Scatter crime count on area income
-fig, ax= plt.subplots(figsize=(12,10))
+fig, ax= plt.subplots(figsize=(14,8))
 t = 'Crime by Per Capita Income (77 Community Areas)'
 doc = 'crime_count_bypcincome.png'
 
@@ -536,9 +536,14 @@ dem_crime['Color']=dem_crime[cname].apply(set_color_column)
 dem_crime.fillna(0, inplace=True)
 dem_colors = dem_crime.Color.tolist()
 dem_crime.plot(kind='scatter', x=pcincome, y='Crime Count', c=dem_colors, title=t, ax=ax)
+ax.text(30000, 12000, 'Community crime associates negatively and weakly with per capita income,\
+\ncontrolling for nothing else.')
 plt.ylim(0)
 plt.gcf().tight_layout()
 fig.savefig(doc)
+
+print "Community crime associates negatively and weakly with per capita income,\
+\ncontrolling for nothing else."
 
 # Question 2: Community Area populations
 #
