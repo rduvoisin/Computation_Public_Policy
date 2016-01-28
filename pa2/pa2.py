@@ -542,8 +542,6 @@ plt.ylim(0)
 plt.gcf().tight_layout()
 fig.savefig(doc)
 
-print "Community crime associates negatively and weakly with per capita income,\
-\ncontrolling for nothing else."
 
 # Question 2: Community Area populations
 #
