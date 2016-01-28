@@ -511,17 +511,43 @@ fig.savefig(doc)
 # (d) By joining with the socioeconomic data,
 # create a scatter plot of crime counts against per capita income.
 # Summarize the relationship in words.
-fig, ax = plt.subplots(figsize=(20,10))
-t = 'Crime Counts on Per Capita Income'
+community_area_count = chi.crimeses.groupby(cname)['ID'].agg('count').copy()
+community_area_count.sort(ascending=False)
+community_area_crime = pd.DataFrame({'Crime Count': community_area_count})
+
+# Merge community_area_crime into demographics
+demographics = chi.ses.copy()
+dem_crime = demographics.merge(community_area_crime,
+                              left_on=cname, right_index=True)
+dem_crime
+
+# Give dataframe a colors column for plotting community areas.
+def set_color_column(com_name):
+    '''Helper for creating a community-specific
+    color in a dataframe.'''
+    return chi.get_community(com_name).color
+
+# Scatter crime count on area income
+fig, ax= plt.subplots(figsize=(12,10))
+t = 'Crime by Per Capita Income (77 Community Areas)'
 doc = 'crime_count_bypcincome.png'
-crime_pcincome = community_crime_weeklycount['ID'].agg('count')
-chi.crimeses.plot(kind='scatter', x='ID', y=pcincome)
+
+dem_crime['Color']=dem_crime[cname].apply(set_color_column)
+dem_crime.fillna(0, inplace=True)
+dem_colors = dem_crime.Color.tolist()
+dem_crime.plot(kind='scatter', x=pcincome, y='Crime Count', c=dem_colors, title=t, ax=ax)
+plt.ylim(0)
+plt.gcf().tight_layout()
+fig.savefig(doc)
 
 # Question 2: Community Area populations
 #
 # Download the census block population data and the Community Area tracts mapping.
 #
-# (a) Join these together using the fact that the last six digits of the tract id in the mapping data correspond to the first six digits of the block id. However, the data portal has a bug: if the block starts with a zero, that digit is missing!
+# (a) Join these together using the fact that the last six digits of the tract
+# id in the mapping data correspond to the first six digits of the block id.
+# However, the data portal has a bug:
+# if the block starts with a zero, that digit is missing!
 
 # (b) Calculate the total population in each Community Area.
 # Question 3: Crime rates
