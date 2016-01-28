@@ -382,14 +382,28 @@ print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({}
             community_crime_count[0],
             community_crime_count.index[76],
             community_crime_count[76]))
-# Plot Question 1a.
+
+# Plot Question 1.a)
 plt.close('all')
 fig = plt.figure(figsize=(10,12))
 doc = 'crime_count_bycommunity.png'
-community_crime_count.plot(kind='bar',
-                           title='Crime Counts by Community Area, 2015') #, labels=crimes[cname]
+t = 'Crime Counts by Community Area, 2015'
+plt.title(t)
+
+community_colors_list = []
+community_labels = []
+for n in community_crime_count.index:
+    community_colors_list.append(chi.get_community(n).color)
+    community_labels.append(chi.get_community(n).color)
+
+xs = np.arange(community_crime_count.size)
+w = 0.9
+community_crime_count.plot(kind='barh', width=w, fontsize=8,
+                           grid=True, color=community_colors_list) #, labels=crimes[cname]
+plt.gca().invert_yaxis()
+
+plt.gcf().tight_layout()
 fig.savefig(doc)
-plt.close('all')
 
 # Plot Daily Counts on select communities
 def to_day(timestamp):
@@ -416,7 +430,13 @@ interesting_places = ['Hyde Park', 'South Chicago',
 community_colors_list = []
 for n in interesting_places:
     community_colors_list.append(chi.get_community(n).color)
-community_crime_dailyunstack[interesting_places].plot(color=community_colors_list) #, rotation=30)
+
+fig = plt.figure(figsize=(12,10))
+# title = 'Daily Crime Counts by Community Area, 2015'
+doc = 'daily_crime_count_bycommunity.png'
+community_crime_dailyunstack[interesting_places].plot(color=community_colors_list,
+                                                      title='Daily Crime Counts by Community Area, 2015')
+fig.savefig(doc)
 # too much data, collapse into week data
 
 day = 'Day'
