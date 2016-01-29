@@ -525,7 +525,7 @@ community_area_count.sort(ascending=False)
 community_area_crime = pd.DataFrame({'Crime Count': community_area_count})
 
 # Merge community_area_crime into demographics
-demographics = chi.ses.copy()
+demographics = chi.crimeses.copy()
 dem_crime = demographics.merge(community_area_crime,
                               left_on=cname, right_index=True)
 dem_crime
@@ -585,9 +585,12 @@ tracts = tracts.loc[tracts.prefix.str.len()>=6]
 
 blocks = pd.read_csv('Population_by_2010_Census_Block.csv')
 blocks[prefix] = blocks[cblock].apply(get_first6digits)
+
+# Join geographic data.
 geo = blocks.merge(tracts, on=prefix)
 geo['community'] = geo[com_id].apply(chi.get_community)
 geo[cname] = geo['community'].apply(lambda x: x.name)
+geo['community'] = geo['community'].apply(lambda x: x.number)
 ignore_communities = ['nan', 'CHICAGO']
 missing_communities = filter(lambda x: str(x) not in ignore_communities,
                             [i for i in cnames if i not in geo[cname].unique().tolist()])
@@ -636,6 +639,67 @@ fig.savefig(doc)
 # for the city in 2015.
 # Then reanswer (1a-d) with crime count replaced by crime rate.
 # Summarize your findings in words.
+
+# Merge all data thus far and create crime rate
+rate = 'crime_rate'
+ccount = 'Crime Count'
+com_ob = 'Community Object'
+geo_full = geo.merge(geo_sum, left_on=cname, right_index=True, how='outer')
+geo_full = geo_full[[cname, com_id, 'community', community_pop]]
+dem_crime_map = dem_crime.merge(geo_full, on=cname, how='outer')
+dem_crime_map[rate] = dem_crime_map[ccount] / (dem_crime_map[community_pop] / 1000)
+dem_crime_map[com_ob] = dem_crime_map[cname].apply(chi.get_community)
+
+# 1 a) & 1 b):
+community_crime_rate = dem_crime_map.groupby(cname)[rate].agg('mean').copy()
+community_crime_rate.sort(ascending=False)
+plt.close('all')
+fig = plt.figure(figsize=(10,12))
+doc = 'crime_rate_bycommunity.png'
+t = 'Crime Rate (per 1000 residents) by Community Area 2015'
+plt.title(t)
+
+proxy_patches = []
+proxy_labels = []
+community_colors_list = []
+for n in community_crime_rate.index:
+    community_colors_list.append(chi.get_community(n).color)
+    if ((n == community_crime_rate.index[0])
+        | (n == community_crime_rate.index[76])):
+        proxy_patch = patches.Patch(color=chi.get_community(n).color)
+        proxy_labels.append("{}, {:.2f}".format(n,
+                            community_crime_rate[community_crime_rate.index==n].mean()))
+        proxy_patches.append(proxy_patch)
+
+xs = np.arange(community_crime_rate.size)
+w = 0.9
+community_crime_rate.plot(kind='barh', width=w, fontsize=8,
+                           grid=True, color=community_colors_list)
+plt.gca().invert_yaxis()
+plt.legend(proxy_patches, proxy_labels)
+plt.gcf().tight_layout()
+fig.savefig(doc)
+
+# 1 c)
+# Plot Daily Counts on select communities
+# community_crime_dailyrate = dem_crime_map.groupby([cname, 'Day'])
+# community_crime_dailyrate = community_crime_dailyrate['ID'].agg('count')
+# community_crime_dailyunstack = community_crime_dailycount.unstack(cname)
+# community_crime_dailyunstack.fillna(0, inplace=True)
+#
+# community_colors_list = []
+# for n in interesting_places:
+#     community_colors_list.append(chi.get_community(n).color)
+#
+#
+# fig, ax = plt.subplots(figsize=(20,10))
+# t = 'Daily Crime Counts by Community Area, 2015'
+# doc = 'daily_crime_count_bycommunity.png'
+#
+# community_crime_dailyunstack[interesting_places].plot(ax=ax, rot=90,
+#                                                       color=community_colors_list, title=t)
+# plt.gcf().tight_layout()
+# fig.savefig(doc)
 # Question 4: Crime and Police Stations
 #
 # Download the police stations data.
