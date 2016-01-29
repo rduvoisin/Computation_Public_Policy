@@ -393,16 +393,24 @@ doc = 'crime_count_bycommunity.png'
 t = 'Crime Counts by Community Area, 2015'
 plt.title(t)
 
+proxy_patches = []
+proxy_labels = []
 community_colors_list = []
 for n in community_crime_count.index:
     community_colors_list.append(chi.get_community(n).color)
+    if ((chi.get_community(n).count == community_crime_count.max())
+        | (chi.get_community(n).count == community_crime_count[76])):
+        proxy_patch = patches.Patch(color=chi.get_community(n).color)
+        proxy_labels.append("{}, {}".format(chi.get_community(n).name,
+                            chi.get_community(n).count))
+        proxy_patches.append(proxy_patch)
 
 xs = np.arange(community_crime_count.size)
 w = 0.9
 community_crime_count.plot(kind='barh', width=w, fontsize=8,
                            grid=True, color=community_colors_list)
 plt.gca().invert_yaxis()
-
+plt.legend(proxy_patches, proxy_labels)
 plt.gcf().tight_layout()
 fig.savefig(doc)
 
@@ -609,7 +617,7 @@ for n in geo_sum.index:
     if n in interesting_places:
         proxy_patch = patches.Patch(color=chi.get_community(n).color)
         proxy_labels.append("{}, {}".format(chi.get_community(n).name,
-                            geo_sum[geo_sum.index==n][community_pop].mean()))
+                            int(geo_sum[geo_sum.index==n][community_pop].mean())))
         proxy_patches.append(proxy_patch)
 
 xs = np.arange(geo_sum.size)
