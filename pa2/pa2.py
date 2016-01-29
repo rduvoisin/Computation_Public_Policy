@@ -20,7 +20,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import operator
 import matplotlib.cm as cm
-
+import matplotlib.patches as patches
 
 # Make a community area class to hold certain attributes stable in plottling.
 class CommunityArea(object):
@@ -146,7 +146,6 @@ def get_fx_from_param(dataframe, communityname, param_to_var, param):
             return dataframe.get_group(communityname)[param_to_var[param]].describe()['top']
     elif param in UNIQUE_INDEX:
         return dataframe.get_group(communityname)[param_to_var[param]].unique().tolist()
-
 
 class CityData(object):
     '''
@@ -504,7 +503,9 @@ fig.savefig(doc)
 fig, ax = plt.subplots(figsize=(20,10))
 t = 'Weekly Crime Counts by Community Area, 2015'
 doc = 'weekly_crime_bycommunity_area.png'
-community_crime_weeklycountunstack[plot_interesting].plot(ax=ax, kind='area', color=community_colors_list, title=t)
+community_crime_weeklycountunstack[plot_interesting].plot(ax=ax, kind='area',
+                                                          color=community_colors_list,
+                                                          title=t)
 plt.gcf().tight_layout()
 fig.savefig(doc)
 
@@ -551,11 +552,82 @@ fig.savefig(doc)
 # id in the mapping data correspond to the first six digits of the block id.
 # However, the data portal has a bug:
 # if the block starts with a zero, that digit is missing!
+def get_last6digits(anumber):
+    return str(int(str(anumber)[-6:]))
+
+def get_first6digits(anumber):
+    return str(anumber)[:6]
+
+
+cblock = 'CENSUS BLOCK'
+tract = 'tract_id'
+com_id = 'community_id'
+prefix = 'prefix'
+block_pop = 'TOTAL POPULATION'
+community_pop = 'community_pop'
+
+tracts = pd.read_csv('communitytracts.csv')
+tracts = tracts.rename(columns={' community_id':com_id})
+tracts[tract] = tracts[tracts.columns[0]]
+del tracts[tracts.columns[0]]
+
+tracts[prefix] = tracts[tract].apply(get_last6digits)
+empty_tracts = tracts.loc[tracts.prefix.str.len()<6]
+tracts = tracts.loc[tracts.prefix.str.len()>=6]
+
+blocks = pd.read_csv('Population_by_2010_Census_Block.csv')
+blocks[prefix] = blocks[cblock].apply(get_first6digits)
+geo = blocks.merge(tracts, on=prefix)
+geo['community'] = geo[com_id].apply(chi.get_community)
+geo[cname] = geo['community'].apply(lambda x: x.name)
+ignore_communities = ['nan', 'CHICAGO']
+missing_communities = filter(lambda x: str(x) not in ignore_communities,
+                            [i for i in cnames if i not in geo[cname].unique().tolist()])
+# sourced on Google
+missing_populations = {'Edison Park' : 11187, 'Edgewater' : 56521, 'West Ridge' : 71942}
 
 # (b) Calculate the total population in each Community Area.
+geo_sum = geo.groupby(cname)[block_pop].aggregate('sum')
+geo_sum.sort(ascending=False)
+geo_sum= pd.DataFrame({'community_pop': geo_sum})
+for com in missing_communities:
+    newf = pd.DataFrame({'community_pop' : pd.Series([missing_populations[com]], index=[com])})
+    geo_sum = geo_sum.append(newf)
+
+geo_sum.sort_values(by=community_pop, ascending=False, inplace=True)
+
+# Plot community populations
+fig, ax= plt.subplots(figsize=(10,12))
+t = 'Population by Community Area'
+doc = 'population_bycommunity.png'
+
+community_colors_list = []
+proxy_patches = []
+proxy_labels = []
+for n in geo_sum.index:
+    community_colors_list.append(chi.get_community(n).color)
+    if n in interesting_places:
+        proxy_patch = patches.Patch(color=chi.get_community(n).color)
+        proxy_labels.append("{}, {}".format(chi.get_community(n).name,
+                            geo_sum[geo_sum.index==n][community_pop].mean()))
+        proxy_patches.append(proxy_patch)
+
+xs = np.arange(geo_sum.size)
+w = 0.9
+geo_sum.plot(kind='barh', width=w, fontsize=8, title=t, legend=False,
+                           grid=True, color=community_colors_list, ax=ax)
+plt.legend(proxy_patches, proxy_labels)
+plt.gca().invert_yaxis()
+plt.gcf().tight_layout()
+fig.savefig(doc)
+
 # Question 3: Crime rates
 #
-# Using your answer to (2), calculate the crime rate (defined as crime count per thousand capita) for the city in 2015. Then reanswer (1a-d) with crime count replaced by crime rate. Summarize your findings in words.
+# Using your answer to (2),
+# calculate the crime rate (defined as crime count per thousand capita)
+# for the city in 2015.
+# Then reanswer (1a-d) with crime count replaced by crime rate.
+# Summarize your findings in words.
 # Question 4: Crime and Police Stations
 #
 # Download the police stations data.
