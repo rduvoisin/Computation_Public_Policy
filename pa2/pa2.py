@@ -520,10 +520,9 @@ fig.savefig(doc)
 # (d) By joining with the socioeconomic data,
 # create a scatter plot of crime counts against per capita income.
 # Summarize the relationship in words.
-community_area_count = chi.crimeses.groupby(cname)['ID'].agg('count').copy()
-community_area_count.sort(ascending=False)
+community_area_count= chi.crimeses.groupby(cname)['ID'].agg('count').copy()
 community_area_crime = pd.DataFrame({'Crime Count': community_area_count})
-
+community_area_crime.sort_values('Crime Count', ascending=False, inplace=True)
 # Merge community_area_crime into demographics
 demographics = chi.crimeses.copy()
 dem_crime = demographics.merge(community_area_crime,
@@ -599,7 +598,6 @@ missing_populations = {'Edison Park' : 11187, 'Edgewater' : 56521, 'West Ridge' 
 
 # (b) Calculate the total population in each Community Area.
 geo_sum = geo.groupby(cname)[block_pop].aggregate('sum')
-geo_sum.sort(ascending=False)
 geo_sum= pd.DataFrame({'community_pop': geo_sum})
 for com in missing_communities:
     newf = pd.DataFrame({'community_pop' : pd.Series([missing_populations[com]], index=[com])})
