@@ -476,7 +476,7 @@ def print_full(x):
     pd.reset_option('display.max_rows')
 
 
-community_crime_weeklycount = community_crime_weeklycount.groupby([cname, 'Week'])
+community_crime_weeklycount = community_crime_dates.groupby([cname, 'Week'])
 community_crime_weeklycount = community_crime_weeklycount['ID'].agg('count')
 community_crime_weeklycount.sort_values(ascending=False, inplace=True)
 
