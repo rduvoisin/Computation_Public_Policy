@@ -400,8 +400,6 @@ proxy_patches = []
 proxy_labels = []
 community_colors_list = []
 for n in community_crime_count.index:
-    # print chi.get_community(n).name, chi.get_community(n).color, chi.get_community(n).count
-
     community_colors_list.append(chi.get_community(n).color)
     if ((chi.get_community(n).count == community_crime_count[ccount].max())
         | (chi.get_community(n).count == community_crime_count[ccount][76])):
@@ -655,9 +653,11 @@ dem_crime_map[com_ob] = dem_crime_map[cname].apply(chi.get_community)
 
 # 1 a) & 1 b):
 community_crime_rate = dem_crime_map.groupby(cname)[rate].agg('mean').copy()
-community_crime_rate.sort(ascending=False)
+community_crime_rate = pd.DataFrame({rate :community_crime_rate})
+community_crime_rate.sort_values(rate, ascending=False, inplace=True)
+
 plt.close('all')
-fig = plt.figure(figsize=(10,12))
+fig, ax = plt.subplots(figsize=(10,12))
 doc = 'crime_rate_bycommunity.png'
 t = 'Crime Rate (per 1000 residents) by Community Area 2015'
 plt.title(t)
@@ -670,13 +670,13 @@ for n in community_crime_rate.index:
     if ((n == community_crime_rate.index[0])
         | (n == community_crime_rate.index[76])):
         proxy_patch = patches.Patch(color=chi.get_community(n).color)
-        proxy_labels.append("{}, {:.2f}".format(n,
-                            community_crime_rate[community_crime_rate.index==n].mean()))
+        proxy_labels.append("{}, {:.2f}".format(chi.get_community(n).name,
+                            community_crime_rate[community_crime_rate.index==n][rate].mean()))
         proxy_patches.append(proxy_patch)
 
 w = 0.9
 community_crime_rate.plot(kind='barh', width=w, fontsize=8,
-                           grid=True, color=community_colors_list)
+                           grid=True, color=community_colors_list, ax=ax)
 plt.gca().invert_yaxis()
 plt.legend(proxy_patches, proxy_labels)
 plt.gcf().tight_layout()
