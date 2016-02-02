@@ -360,6 +360,7 @@ pcincome = 'PER CAPITA INCOME '
 hardship = 'HARDSHIP INDEX'
 communityses = "Community Area Number"
 cname = "COMMUNITY AREA NAME"
+day = 'Day'
 
 # main
 # Question 1: Crime counts and socioeconomics
@@ -530,7 +531,7 @@ community_area_crime.sort_values('Crime Count', ascending=False, inplace=True)
 demographics = chi.crimeses.copy()
 dem_crime = demographics.merge(community_area_crime,
                               left_on=cname, right_index=True)
-dem_crime
+
 
 # Give dataframe a colors column for plotting community areas.
 def set_color_column(com_name):
@@ -540,7 +541,7 @@ def set_color_column(com_name):
 
 # Scatter crime count on area income
 fig, ax= plt.subplots(figsize=(14,8))
-t = 'Crime by Per Capita Income (77 Community Areas)'
+t = 'Yearly Crime by Per Capita Income (77 Community Areas), 2015'
 doc = 'crime_count_bypcincome.png'
 
 dem_crime['Color']=dem_crime[cname].apply(set_color_column)
@@ -611,7 +612,7 @@ geo_sum.set_index(cname, inplace=True)
 
 # Plot community populations
 fig, ax= plt.subplots(figsize=(10,12))
-t = 'Population by Community Area'
+t = 'Population by Community Area, 2010'
 doc = 'population_bycommunity.png'
 
 community_colors_list = []
@@ -659,7 +660,7 @@ community_crime_rate.sort_values(rate, ascending=False, inplace=True)
 plt.close('all')
 fig, ax = plt.subplots(figsize=(10,12))
 doc = 'crime_rate_bycommunity.png'
-t = 'Crime Rate (per 1000 residents) by Community Area 2015'
+t = 'Yearly Crime Rate (per 1000 residents) by Community Area 2015'
 plt.title(t)
 
 proxy_patches = []
@@ -683,25 +684,81 @@ plt.gcf().tight_layout()
 fig.savefig(doc)
 
 # 1 c)
-# Plot Daily Counts on select communities
-# community_crime_dailyrate = dem_crime_map.groupby([cname, 'Day'])
-# community_crime_dailyrate = community_crime_dailyrate['ID'].agg('count')
-# community_crime_dailyunstack = community_crime_dailycount.unstack(cname)
-# community_crime_dailyunstack.fillna(0, inplace=True)
-#
-# community_colors_list = []
-# for n in interesting_places:
-#     community_colors_list.append(chi.get_community(n).color)
-#
-#
-# fig, ax = plt.subplots(figsize=(20,10))
-# t = 'Daily Crime Counts by Community Area, 2015'
-# doc = 'daily_crime_count_bycommunity.png'
-#
-# community_crime_dailyunstack[interesting_places].plot(ax=ax, rot=90,
-#                                                       color=community_colors_list, title=t)
-# plt.gcf().tight_layout()
-# fig.savefig(doc)
+# Plot Daily Crime Rate on select communities
+# First save population total into community objects (value)
+for com in geo_sum.index:
+    print com==chi.get_community(com).name
+    if com == chi.get_community(com).name:
+        chi.get_community(com).value = int(geo_sum[geo_sum.index==com][community_pop].mean())
+# Generate a Daily Crime Count in dem_crime_map
+daily_count = 'Daily_Count'
+# Divide daily counts by population
+daily_rate = 'Daily_Rate'
+dailyrate = community_crime_dailyunstack.copy()
+for com in dailyrate.columns:
+    dailyrate[com] = dailyrate[com].apply(lambda x: x / (chi.get_community(com).value / 1000))
+
+dailyrate.fillna(0, inplace=True)
+# Reorder columns according to their median daily rate for plotting preference.
+dailyrate.median().order(ascending=False)
+dailyrate = dailyrate.reindex_axis(dailyrate.median().order(ascending=True).index,axis=1)
+
+plt.close('all')
+fig, ax = plt.subplots(figsize=(20,10))
+t = 'Daily Crime Rate (crimes per 1000 residents) by Community Area, 2015'
+doc = 'daily_crime_rate_bycommunity.png'
+proxy_patches = []
+proxy_labels = []
+community_colors_list = []
+plotting_communities = []
+for com in dailyrate.columns:
+    if com in interesting_places:
+        plotting_communities.append(com)
+        community_colors_list.append(chi.get_community(com).color)
+        proxy_patch = patches.Patch(color=chi.get_community(com).color)
+        proxy_labels.insert(0, "{}, {:.2f}".format(chi.get_community(com).name,
+                            dailyrate[com].median()))
+        proxy_patches.insert(0,proxy_patch)
+
+
+dailyrate[plotting_communities].plot(ax=ax, kind='area', rot=90, color=community_colors_list, title=t)
+plt.gcf().tight_layout()
+plt.legend(proxy_patches, proxy_labels, title= 'Median Daily Rate')
+fig.savefig(doc)
+
+# Last duplicate of question 1 with crime rates instead of counts:
+# Scatter crime rate on area income
+
+plt.close('all')
+fig, ax= plt.subplots(figsize=(14,8))
+t = 'Yearly Crime Rate by Per Capita Income (77 Community Areas), 2015'
+doc = 'crime_rate_bypcincome.png'
+
+proxy_patches = []
+proxy_labels = []
+community_colors_list = []
+
+for com in dem_crime_map[cname].unique().tolist():
+    if com in interesting_places:
+        community_colors_list.append(chi.get_community(com).color)
+        proxy_patch = patches.Patch(color=chi.get_community(com).color)
+        proxy_labels.append("{}, {:.2f}".format(chi.get_community(com).name,
+                            dailyrate[com].median()))
+        proxy_patches.append(proxy_patch)
+
+dem_colors = dem_crime_map.Color.tolist()
+
+dem_crime_map.plot(kind='scatter', x=pcincome, y=rate, c=dem_colors, title=t, ax=ax)
+ax.text(20000, 1200, 'When controlling for population size,\n\
+community crime still associates negatively, but more weakly,\n\
+with per capita income, when controlling for nothing else.\n\
+The slope is much flatter.')
+
+plt.ylim(0)
+plt.legend(proxy_patches, proxy_labels, title= 'Median Crime Rate of Communities of Interest')
+plt.gcf().tight_layout()
+fig.savefig(doc)
+
 # Question 4: Crime and Police Stations
 #
 # Download the police stations data.
