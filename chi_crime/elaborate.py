@@ -372,7 +372,7 @@ crime_data = filenames[0]
 ses_data = filenames[1]
 
 chi = CityData(filenames, crime_data, ses_data)
-chi.MakeCommunities()
+chi.MakeCommunities(True)
 
 # (a) Calculate the number of crimes in each Community Area in 2015.
 # (b) Sort the Community Areas by 2015 crime count.
@@ -381,11 +381,10 @@ cnames = chi.crimeses[cname].unique().tolist()
 community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count').copy()
 community_crime_count = pd.DataFrame({'Crime Count' :community_crime_count})
 community_crime_count.sort_values('Crime Count', ascending=False, inplace=True)
-print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
-     format(community_crime_count.index[0],
-            community_crime_count[0],
-            community_crime_count.index[76],
-            community_crime_count[76]))
+
+print '1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.\
+format(community_crime_count.index[0], community_crime_count['Crime Count'][0],
+            community_crime_count.index[76], community_crime_count['Crime Count'][76])
 
 
 
