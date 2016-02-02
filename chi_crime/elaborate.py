@@ -390,18 +390,21 @@ format(community_crime_count.index[0], community_crime_count['Crime Count'][0],
 
 # Plot Question 1. b)
 plt.close('all')
-fig = plt.figure(figsize=(10,12))
+fig, ax = plt.subplots(figsize=(10,12))
 doc = 'crime_count_bycommunity.png'
 t = 'Crime Counts by Community Area, 2015'
+ccount = 'Crime Count'
 plt.title(t)
 
 proxy_patches = []
 proxy_labels = []
 community_colors_list = []
 for n in community_crime_count.index:
+    # print chi.get_community(n).name, chi.get_community(n).color, chi.get_community(n).count
+
     community_colors_list.append(chi.get_community(n).color)
-    if ((chi.get_community(n).count == community_crime_count.max())
-        | (chi.get_community(n).count == community_crime_count[76])):
+    if ((chi.get_community(n).count == community_crime_count[ccount].max())
+        | (chi.get_community(n).count == community_crime_count[ccount][76])):
         proxy_patch = patches.Patch(color=chi.get_community(n).color)
         proxy_labels.append("{}, {}".format(chi.get_community(n).name,
                             chi.get_community(n).count))
@@ -410,7 +413,7 @@ for n in community_crime_count.index:
 xs = np.arange(community_crime_count.size)
 w = 0.9
 community_crime_count.plot(kind='barh', width=w, fontsize=8,
-                           grid=True, color=community_colors_list)
+                           grid=True, color=community_colors_list, ax=ax)
 plt.gca().invert_yaxis()
 plt.legend(proxy_patches, proxy_labels)
 plt.gcf().tight_layout()
