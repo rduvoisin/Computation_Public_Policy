@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import operator
 import matplotlib.cm as cm
 import matplotlib.patches as patches
+import math
 
 # Make a community area class to hold certain attributes stable in plottling.
 class CommunityArea(object):
@@ -332,6 +333,57 @@ class CityData(object):
                 else:
                     if comm.number == name_or_number:
                     	return comm
+
+# Make a Coordinates class for manipulating map data.
+
+class Coordinates(object):
+    EARTH_RADIUS = 6371000.0
+
+    def __init__(self, latitude, longitude):
+        '''Constructor'''
+        self.latitude = latitude
+        self.longitude = longitude
+
+
+    @property
+    def latitude(self):
+        return self._latitude
+
+    @latitude.setter
+    def latitude(self, latitude):
+        if not isinstance(latitude, (int, float)): raise ValueError("Not a number")
+        self._latitude = latitude
+
+    @property
+    def longitude(self):
+        return self._longitude
+
+    @longitude.setter
+    def longitude(self, longitude):
+        if not isinstance(longitude, (int, float)): raise ValueError("Not a number")
+        self._longitude = longitude
+
+
+    def __repr__(self):
+        return "({}, {})".format(self.latitude, self.longitude)
+
+    def distance_to(self, other):
+        sin2lat = (math.sin((math.radians(self.latitude) - math.radians(other.latitude)) / 2))**2
+        sin2lon = (math.sin((math.radians(self.longitude) - math.radians(other.longitude)) / 2))**2
+        return 2*self.EARTH_RADIUS*math.asin(
+                                       math.sqrt(sin2lat
+                                       + (math.cos(math.radians(other.latitude))
+                                       *math.cos(math.radians(self.latitude))
+                                       *(sin2lon))))
+
+    def __str__(self):
+        card_ns = "N"
+        card_ew = "E"
+        if self.latitude < 0:
+            card_ns = "S"
+        if self.longitude < 0:
+            card_ew = "W"
+        return "({:.3f} {}, {:.3f} {})".format(abs(self.latitude), card_ns, abs(self.longitude), card_ew)
 
 # GLOBALS
 n = "ID"
@@ -763,13 +815,48 @@ fig.savefig(doc)
 #
 # Download the police stations data.
 #
-# (a) Extract the latitudes and longitudes of the police stations (found in the ADDRESS column) as floats into their own columns called 'Station Latitude' and 'Station Longitude', respectively.
+stations = pd.read_csv('Police_Stations.csv')
+# (a) Extract the latitudes and longitudes of the police stations
+# (found in the ADDRESS column) as floats into their own columns called
+# 'Station Latitude' and 'Station Longitude', respectively.
+station_lat = 'Station Latitude'
+station_lon = 'Station Longitude'
+
 #
-# (b) Join the crime data with the stations on police district. Hint: the station district is a text field (because one of them is 'Headquarters') so you'll need to convert the crime district to the same.
+# (b) Join the crime data with the stations on police district.
+# Hint: the station district is a text field (because one of them is 'Headquarters')
+# so you'll need to convert the crime district to the same.
+dem_crime_map[district] = dem_crime_map[district].astype(str)
+# create coordinates objects out of crime lat and lon
+crime_coords = 'Crime Coordinates'
+def make_coordinates(latloncol):
+    if isinstance(latloncol, str):
+        y = latloncol[1:len(latloncol)-1][:]
+        z = y[:y.index(',')][:]
+        laty = float(z)
+        x = y[y.index(',')+2:][:]
+        longy = float(x)
+        newcoord = Coordinates()
+        newcoord.latitude = laty
+        newcoord.longitude = longy
+        return newcoord
+    elif isinstance(latloncol, int):
+        newcoord = Coordinates()
+        newcoord.latitude = latloncol
+        newcoord.longitude = latloncol
+        return newcoord
+
+dem_crime_map[crime_coords] = dem_crime_map[lat_lon]
+dem_crime_map[crime_coords] = dem_crime_map[crime_coords].apply(make_coordinates)
 #
-# (c) Define a function which calculates the distance in kilometers between two points (latitude, longitude) using the Pythagorean theorem.
+# (c) Define a function which calculates the distance in kilometers
+# between two points (latitude, longitude) using the Pythagorean theorem.
 #
-# Hint: To convert the coordinate distance to kilometers multiply by 95. For example the distance from (41, -87) to (41.1,-87) is about 9.5km. This is the scale factor for these coordinates near Chicago. Note this method is approximate because the scale factor varies from point to point (i.e. the Earth is not flat!).
+# Hint: To convert the coordinate distance to kilometers multiply by 95.
+# For example the distance from (41, -87) to (41.1,-87) is about 9.5km.
+# This is the scale factor for these coordinates near Chicago.
+# Note this method is approximate because the scale factor varies
+# from point to point (i.e. the Earth is not flat!).
 #
 # (d) Calculate the distance between each crime and its district police station. Hint: If your answer to (c) is of the form
 #
