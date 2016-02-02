@@ -377,7 +377,8 @@ chi.MakeCommunities()
 # Which Community Area (by name) has the highest crime count. The lowest?
 cnames = chi.crimeses[cname].unique().tolist()
 community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count').copy()
-community_crime_count.sort(ascending=False)
+community_crime_count = pd.DataFrame({'Crime Count' :community_crime_count})
+community_crime_count.sort_values('Crime Count', ascending=False, inplace=True)
 print('1. a) Community Area Crime Counts:\n\tHighest: {} ({}),\n\tLowest: {} ({})'.
      format(community_crime_count.index[0],
             community_crime_count[0],
@@ -429,7 +430,7 @@ interesting_places = ['Hyde Park', 'South Chicago',
 
 daily_table = chi.crimeses[['ID', cname, 'Day']].copy()
 table = pd.pivot_table(daily_table, columns=cname, index=['Day'], aggfunc='count')
-print table.to_string(na_rep ='')
+# print table.to_string(na_rep ='')
 daily_table = daily_table[daily_table[cname].isin(interesting_places)]
 table = pd.pivot_table(daily_table, columns=cname, index=['Day'], aggfunc='count')
 print table.to_string(na_rep ='')
@@ -598,12 +599,13 @@ missing_populations = {'Edison Park' : 11187, 'Edgewater' : 56521, 'West Ridge' 
 
 # (b) Calculate the total population in each Community Area.
 geo_sum = geo.groupby(cname)[block_pop].aggregate('sum')
-geo_sum= pd.DataFrame({'community_pop': geo_sum})
+geo_sum= pd.DataFrame({'community_pop': geo_sum, cname: geo_sum.index})
 for com in missing_communities:
-    newf = pd.DataFrame({'community_pop' : pd.Series([missing_populations[com]], index=[com])})
-    geo_sum = geo_sum.append(newf)
+    newf = pd.DataFrame({'community_pop' : pd.Series([missing_populations[com]], index=[com]), cname:com})
+    geo_sum = geo_sum.append(newf, ignore_index=True)
 
 geo_sum.sort_values(by=community_pop, ascending=False, inplace=True)
+geo_sum.set_index(cname, inplace=True)
 
 # Plot community populations
 fig, ax= plt.subplots(figsize=(10,12))
@@ -613,6 +615,7 @@ doc = 'population_bycommunity.png'
 community_colors_list = []
 proxy_patches = []
 proxy_labels = []
+
 for n in geo_sum.index:
     community_colors_list.append(chi.get_community(n).color)
     if n in interesting_places:
@@ -621,10 +624,10 @@ for n in geo_sum.index:
                             int(geo_sum[geo_sum.index==n][community_pop].mean())))
         proxy_patches.append(proxy_patch)
 
-xs = np.arange(geo_sum.size)
 w = 0.9
+
 geo_sum.plot(kind='barh', width=w, fontsize=8, title=t, legend=False,
-                           grid=True, color=community_colors_list, ax=ax)
+             grid=True, color=community_colors_list, ax=ax)
 plt.legend(proxy_patches, proxy_labels)
 plt.gca().invert_yaxis()
 plt.gcf().tight_layout()
@@ -642,9 +645,7 @@ fig.savefig(doc)
 rate = 'crime_rate'
 ccount = 'Crime Count'
 com_ob = 'Community Object'
-geo_full = geo.merge(geo_sum, left_on=cname, right_index=True, how='outer')
-geo_full = geo_full[[cname, com_id, 'community', community_pop]]
-dem_crime_map = dem_crime.merge(geo_full, on=cname, how='outer')
+dem_crime_map = dem_crime.merge(geo_sum, left_on=cname, right_index=True)
 dem_crime_map[rate] = dem_crime_map[ccount] / (dem_crime_map[community_pop] / 1000)
 dem_crime_map[com_ob] = dem_crime_map[cname].apply(chi.get_community)
 
@@ -669,7 +670,6 @@ for n in community_crime_rate.index:
                             community_crime_rate[community_crime_rate.index==n].mean()))
         proxy_patches.append(proxy_patch)
 
-xs = np.arange(community_crime_rate.size)
 w = 0.9
 community_crime_rate.plot(kind='barh', width=w, fontsize=8,
                            grid=True, color=community_colors_list)
