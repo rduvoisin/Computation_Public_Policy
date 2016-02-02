@@ -211,6 +211,8 @@ class CityData(object):
         # Presume only ses data
         # contain comprehensive community areas.
         if not self.__crime.empty and not self.__ses.empty:
+            self.__ses.dropna(subset = ['Community Area Number'], inplace=True)
+            self.__crime = self.__crime[self.__crime[community]!=0]
             merged =  self.__crime.merge(self.__ses, left_on=community,
                                     right_on=communityses,
                                     how='outer') # I want that indicator oprion
