@@ -50,6 +50,8 @@ WHERE found_violation_flag='Y'
 GROUP BY found_violation_flag, handler_id, handler_name
 ORDER BY count(*) DESC;
 --How many times? 
+--Also find these handlers' site names in the hhandlers table.
+/*Hint: Use a GROUP BY and an ORDER BY DESC.*/
 /*
 2364;"ILD990817991";"KOPPERS INC"
 2379;"ILD000714881";"KEYSTONE STEEL & WIRE CO"
@@ -58,8 +60,7 @@ ORDER BY count(*) DESC;
 4311;"ILD048843809";"CHEMETCO INC"
 4772;"KYD053348108";"SAFETY-KLEEN SYSTEMS, INC."
 */
---Also find these handlers' site names in the hhandlers table.
-/*Hint: Use a GROUP BY and an ORDER BY DESC.*/
+
 
 /*Question 3: Industries
 The North American Industry Classification System 
