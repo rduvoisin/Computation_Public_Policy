@@ -29,6 +29,7 @@ index.body
 # Note, for example that the links of interest follow this pattern:
 #     .../detainees/##
 prisoner_links = index.find_all('div', {'class': 'nyint-detainee-fullcol'})
+print len(prisoner_links)
 # print prisoner_links
 # Define a function wrapper for grabbing
 def try_request(url):
@@ -39,7 +40,7 @@ def try_request(url):
 def scrape_link(links):
     for link in links:
         # Turn the link into an html file
-        prisoner_html = try_request(base_url + each['href'])
+        prisoner_html = try_request(base_url + index_ref)
         name = test.find('h1').get_text().strip()
         country = test.find('a', href=re.compile('/country/')).get_text()
         time_in_gitmo= test.find(text=re.compile('for \d+ years')).lstrip('for ').strip().rsplit('.\n\n',1)[0]
