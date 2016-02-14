@@ -34,12 +34,26 @@ evaluation_agency, evaluation_type, evaluation_type_description  limit 100;
 SELECT * from cmecomp3 limit 100;
 SELECT docket_number from cmecomp3 limit 100;
 --(a) How many evaluations are there?
-SELECT count(*) from cmecomp3; --2061000
+SELECT count(*) from cmecomp3; --2,061,000
 --(b) How many evaluations found violations?
 SELECT count(*), found_violation_flag from cmecomp3 
-GROUP BY found_violation_flag; --1478260
-/*(c) What proportion of evaluations found violations?
-
-(d) Which five handler_ids have been found in violation the most times? How many times? 
-Also find these handlers' site names in the hhandlers table.
-Hint: Use a GROUP BY and an ORDER BY DESC.*/
+GROUP BY found_violation_flag; --1,478,260
+--(c) What proportion of evaluations found violations?
+SELECT count(*), found_violation_flag from cmecomp3 
+GROUP BY found_violation_flag; --1,478,260
+--(d) Which five handler_ids have been found in violation the most times? 
+SELECT count(*), handler_id, handler_name, found_violation_flag from cmecomp3 
+WHERE found_violation_flag='Y'
+GROUP BY found_violation_flag, handler_id, handler_name
+ORDER BY count(*) DESC;
+--How many times? 
+/*
+2364;"ILD990817991";"KOPPERS INC"
+2379;"ILD000714881";"KEYSTONE STEEL & WIRE CO"
+2396;"KY0000005785";"DESIGNTEC RECYCLING CENTER"
+3481;"ILD006296800";"MUSICK PLATING CO"
+4311;"ILD048843809";"CHEMETCO INC"
+4772;"KYD053348108";"SAFETY-KLEEN SYSTEMS, INC."
+*/
+--Also find these handlers' site names in the hhandlers table.
+/*Hint: Use a GROUP BY and an ORDER BY DESC.*/
