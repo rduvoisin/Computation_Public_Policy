@@ -60,3 +60,41 @@ ORDER BY count(*) DESC;
 */
 --Also find these handlers' site names in the hhandlers table.
 /*Hint: Use a GROUP BY and an ORDER BY DESC.*/
+
+/*Question 3: Industries
+The North American Industry Classification System 
+is a system used by federal agencies to classify a 
+business according to its industry. The naics table 
+contains this information as retrieved from here. 
+Start by skimming this file.*/
+
+--(a) How many different naics codes are there? 
+--How many six-digit industry classifications are there? 
+--How many two-digit classifications are there? 
+--These determine the sectors as described here.
+
+--(b) The hnaics table contains naics codes for some handlers. 
+--How many handlers have naics codes? 
+--How many don't?
+
+--(c) Join the hnaics table with the naics table 
+--and use a GROUP BY to determine which the 
+--number of facilities in each sector. 
+--Which sector has the most hazardous-waste handlers? 
+--The least?
+--Hint: You can get the digit naics code from the naics_code 
+--using this expression: substring(naics_code for 2) || '----'
+
+--Hint: group by naics_description to get the description instead of the code.
+
+--(d) Create a temporary table called hsectors containing 
+--unique pairs of handler ids and sector descriptions.
+--Hint: Use a GROUP BY to ensure only unique pairs.
+--Note: We'll discuss creating temporary 
+--tables in class on Thursday.
+
+/*(e) Join hsectors to cmecomp3, to determine for each sector, 
+the number of handlers evaluated, the number of evaluations, 
+the number of violations, and the proportion of evaluations finding violations. 
+Which sector has the most violations?*/ 
+--The highest proportion of evaluations finding violations? 
