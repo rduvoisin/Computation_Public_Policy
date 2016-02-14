@@ -34,13 +34,16 @@ evaluation_agency, evaluation_type, evaluation_type_description  limit 100;
 SELECT * from cmecomp3 limit 100;
 SELECT docket_number from cmecomp3 limit 100;
 --(a) How many evaluations are there?
-SELECT count(*) from cmecomp3; --2,061,000
+SELECT count(*) as total from cmecomp3; --2,061,000
 --(b) How many evaluations found violations?
-SELECT count(*), found_violation_flag from cmecomp3 
-GROUP BY found_violation_flag; --1,478,260
+SELECT count(*) as total_violations, found_violation_flag from cmecomp3 
+WHERE found_violation_flag='Y'
+GROUP BY found_violation_flag; --1,478,260 
 --(c) What proportion of evaluations found violations?
-SELECT count(*), found_violation_flag from cmecomp3 
-GROUP BY found_violation_flag; --1,478,260
+-- 1,478,260 / 2,061,000
+SELECT count(*) *1.0 / 2061000 as proportion_violations from cmecomp3 
+WHERE found_violation_flag='Y'
+GROUP BY found_violation_flag; --0.71725376031052886948
 --(d) Which five handler_ids have been found in violation the most times? 
 SELECT count(*), handler_id, handler_name, found_violation_flag from cmecomp3 
 WHERE found_violation_flag='Y'
