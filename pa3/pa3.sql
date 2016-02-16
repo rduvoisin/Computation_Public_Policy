@@ -69,7 +69,7 @@ business according to its industry. The naics table
 contains this information as retrieved from here.
 Start by skimming this file.*/
 /*from the command line now:
-psql postgresql://cfpp_student:KERG3O2e@dssgsummer2014postgres.c5faqozfo86k.us-west-2.rds.amazonaws.com:5432/cfpp*/
+psql postgresql://cfpp_student:@dssgsummer2014postgres.c5faqozfo86k.us-west-2.rds.amazonaws.com:5432/cfpp*/
 SELECT naics, naics_description from naics limit 100;
 SELECT DISTINCT naics, naics_description from naics limit 100;
 
@@ -163,15 +163,21 @@ CREATE TEMP TABLE nhn AS(
     FROM naics
     LEFT OUTER JOIN hnaics
       ON (naics.naics = hnaics.naics_code)
+      WHERE substring(naics.naics)
 );
 SELECT naics, naics_description, naics_code
 FROM nhn limit 100;
 
-SELECT count(*)
+
+SELECT count(*), naics_description
 FROM nhn
-WHERE naics_code SIMILAR TO '(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)(-/)%'
-GROUP BY naics_code
+WHERE naics SIMILAR TO '(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)(-|/)%'
+GROUP BY naics
 ORDER BY count(*) DESC;
+
+SELECT count(*)
+FROM naics
+WHERE naics SIMILAR TO '(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)(-|/)%';
 
 
 --  Which sector has the most hazardous-waste handlers?
