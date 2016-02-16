@@ -92,22 +92,88 @@ ORDER BY count(*) DESC; --  Starts with 4 | Management of Companies and Enterpri
 
 --  Since there is no naics_code variable per se, if we presume that
 --  naics_description is the better proxy to naics_code, there are
---  1393 unique codes.
+--  1,393 unique codes.
 
 --  How many six-digit industry classifications are there?
-SELECT count(*), naics, naics_description
+/*
+SELECT *
 FROM naics
-WHERE naics LIKE ;
---  How many two-digit classifications are there?
---  These determine the sectors as described here.
+WHERE naics LIKE '%9';
 
+SELECT *
+FROM naics
+WHERE naics LIKE '%[!//]';
+
+SELECT *
+FROM naics
+WHERE naics LIKE '%[!-//]%';
+
+SELECT *
+FROM naics
+WHERE naics LIKE '%!-' and WHERE naics LIKE '%!//';
+
+SELECT *
+FROM naics
+WHERE naics LIKE '[0-9][0-9][0-9][0-9][0-9][0-9]';
+
+SELECT *
+FROM naics
+WHERE naics NOT LIKE '%/';*/
+
+SELECT count(*)
+FROM naics
+WHERE naics SIMILAR TO '%(0|1|2|3|4|5|6|7|8|9)';
+--  There are 978 six-digit classifications!
+
+--  How many two-digit classifications are there?
+SELECT count(*)
+FROM naics
+WHERE naics SIMILAR TO '(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)(-|/)%';
+--  There are 20 two-digit classifications!
+
+--  These determine the sectors as described here.
 --  (b) The hnaics table contains naics codes for some handlers.
 --  How many handlers have naics codes?
+SELECT count(*)
+FROM hnaics; --  There 3,007,616 rows of epa_handler_id's.
+
 --  How many don't?
+SELECT count(hhandler.epa_handler_id)
+FROM hhandler
+LEFT OUTER JOIN hnaics
+  ON (hhandler.epa_handler_id = hnaics.epa_handler_id)
+  WHERE hnaics.epa_handler_id IS NULL;
+
+--Double check that these unmatched epa_handler_id's are unique:
+SELECT count(DISTINCT hhandler.epa_handler_id)
+FROM hhandler
+LEFT OUTER JOIN hnaics
+  ON (hhandler.epa_handler_id = hnaics.epa_handler_id)
+  WHERE hnaics.epa_handler_id IS NULL;
+-- 418,498 unique epa_handler_id don't have naics codes.
 
 --  (c) Join the hnaics table with the naics table
 --  and use a GROUP BY to determine which the
 --  number of facilities in each sector.
+SELECT naics_sequence_number, naics_code_owner, naics_code
+FROM hnaics limit 100;
+
+CREATE TEMP TABLE nhn AS(
+    SELECT *
+    FROM naics
+    LEFT OUTER JOIN hnaics
+      ON (naics.naics = hnaics.naics_code)
+);
+SELECT naics, naics_description, naics_code
+FROM nhn limit 100;
+
+SELECT count(*)
+FROM nhn
+WHERE naics_code SIMILAR TO '(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)(-/)%'
+GROUP BY naics_code
+ORDER BY count(*) DESC;
+
+
 --  Which sector has the most hazardous-waste handlers?
 --  The least?
 --  Hint: You can get the digit naics code from the naics_code
