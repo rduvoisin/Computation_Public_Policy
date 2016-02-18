@@ -95,13 +95,30 @@ for i in range(len(all_header3)):
     for listing in listings:
         header_li = listing
         print 'header_li = {}'.format(header_li)
-        strip_date = header_li.next_element[:-2].strip()
-        print 'strip_date', strip_date
-        header_dater = re.match('(^\w+ \w+)', strip_date)
-        print 'header_dater', header_dater
-        header_date = header_dater.group(0)
-        print 'header_date', header_date
-        is_a = header_li.next_element
+        if len(header_li.findChildren('li')) > 0:
+            header_date = []
+            header_brief = []
+            for subbullet_li in header_li.findChildren('li'):
+                strip_date = subbullet_li.next_element[:-2].strip()
+                print 'strip_date', strip_date
+                sub_dater = re.match('(^\w+ \w+)(.*)', strip_date)
+                print 'sub_dater', sub_dater
+                sub_date = sub_dater.group(1)
+                print 'sub_date', sub_date
+                # Add description too
+                header_date.append(sub_date)
+                # strip text
+                sub_text = sub_dater.group(2).strip()
+                header_brief.append(re.search('(\w+)(.*)', sub_text))
+        else:
+            header_brief = None
+            strip_date = header_li.next_element[:-2].strip()
+            print 'strip_date', strip_date
+            header_dater = re.match('(^\w+ \w+)', strip_date)
+            print 'header_dater', header_dater
+            header_date = header_dater.group(0)
+            print 'header_date', header_date
+        is_a = header_li
         while is_a.name != 'a':
             is_a = is_a.next_element
         print 'is_a!', is_a.name, is_a.contents
@@ -109,6 +126,7 @@ for i in range(len(all_header3)):
         header_bullet = {'year': year, 'date': None, 'link': None, 'brief': None, 'place':None}
         header_bullet['date'] = header_date
         header_bullet['link'] = header_href
+        header_bullet['brief'] = header_brief
         print 'header_bullet = {}'.format(header_bullet)
         header_dict = {}
         header_dict[header_bullet['link']] = header_bullet
@@ -126,7 +144,7 @@ for i in range(len(all_header3)):
             header_lists_year_dics[year][header_date] = [header_dict]
         # header_lists_year_dics[year][header_bullet['link']] = header_bullet
         print 'header_lists_year_dics', header_lists_year_dics
-    # return header_lists_year_dics
+        # return header_lists_year_dics
 
 print 'header_lists_year_dics', header_lists_year_dics
 
