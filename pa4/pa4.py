@@ -73,9 +73,6 @@ print len(wiki_links)
 first_header3 = index.find('h3')
 all_headers = index.find_all('h3')
 
-# header_lists_year_dics = {}
-# def get_crash_dict_links(all_header3):
-# header_lists_year_dics = {}
 def parse_crashes_to_dict(all_header3):
     '''
     Input: a group of h3 headers that contain hierarchical html lists.
@@ -240,26 +237,10 @@ def new_bullet_from_li(header_li, header_lists_year_dics=header_lists_year_dics,
             header_lists_year_dics[year][header_date] = [header_dict]
 
 crash_dict = parse_crashes_to_dict(all_headers)
-#
-# month = re.match(r'(^\w [1-31])', first_header3.next_sibling.next_sibling.contents[1])
-# hlist = fh.next_sibling.next_sibling.contents[1]
-# month = re.match('(^<li>)(\w [1-31])', fh.next_sibling.next_sibling.contents[1])
-#
-# first_list = index.find_all('li') .find_all()'a',  href=re.compile('^/wiki/'))
-# wiki_lists = index.find_all('li', text="^[A-Z][a-z]+ - ", href=re.compile('^/wiki/'))
+
 # wiki_lists = index.find_all('li')
-# pattern =
 for wiki_list in wiki_lists:
     print wiki_list['href']
-
-table_cards = index.find_all('table', {'class': 'infobox vcard vevent'})
-# pattern =
-for card in table_cards:
-    print card['TEXT']
-
-crashes_links = index.find_all('div', {'class': 'nyint-detainee-fullcol'})
-print len(prisoner_links)
-# print prisoner_links
 # Define a function wrapper for grabbing
 def try_request(url):
     html = urlopen(url)
