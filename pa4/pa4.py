@@ -72,12 +72,139 @@ print len(wiki_links)
 # <h3><span class="mw-headline" id="1924">1924</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=List_of_accidents_and_incidents_involving_commercial_aircraft&amp;action=edit&amp;section=5" title="Edit section: 1924">edit</a><span class="mw-editsection-bracket">]</span></span></h3>
 first_header3 = index.find('h3')
 all_headers = index.find_all('h3')
-header_lists_dic = {}
-header_lists_year_dics = {}
+
+# header_lists_year_dics = {}
 # def get_crash_dict_links(all_header3):
-header_lists_year_dics = {}
+# header_lists_year_dics = {}
+def parse_crashes_to_dict(all_header3):
+    '''
+    Input: a group of h3 headers that contain hierarchical html lists.
+    Returns: A dictionary of years to dictionaries of dates and link
+        information:
+        -date: the date of the crash.
+        -link: the link to further info on the crash.
+        -brief: a brief description of the accident.
+        -place: the location of the crash.
+    '''
+    header_lists_year_dics = {}
+    for i in range(len(all_header3)):
+        print "TWEET {}\n".format(i)
+        print all_header3[i]
+        this_header = all_header3[i]
+        this_header.next_sibling.next_sibling
+        is_911 = False
+        if not this_header.span:
+            print "\nOp! All Done!"
+            return header_lists_year_dics
+        year = this_header.span.get('id')
+        is_ul = this_header
+        while is_ul.name != 'ul':
+            is_ul = is_ul.next_sibling
+        print 'is_ul!', is_ul.name, is_ul.contents
+        print len(is_ul.contents)
+        listings = [is_ul.contents[i] for i in range(len(is_ul.contents[:-1])) if i%2>0]
+        print 'listings', listings
+        for listing in listings:
+            header_li = listing
+            print 'header_li = {}'.format(header_li)
+            if len(header_li.findChildren('li')) > 0:
+                header_date = []
+                header_brief = []
+                for subbullet_li in header_li.findChildren('li'):
+                    has_same_date = False
+                    if not subbullet_li.next_element.name:
+                        is_date = re.match('([1-9]+)', subbullet_li.next_element.split()[1])
+                        if is_date:
+                            strip_date = subbullet_li.next_element[:-2].strip()
+                        else:
+                            strip_date = header_li.next_element[:-2].strip()
+                            has_same_date = True
+                    else:
+                        strip_date = header_li.next_element[:-2].strip()
+                        is_911 = True
+                        has_same_date = True
+                    # Add description too
+                    # if sub_date.strip() == "Septemeber 11":
+                    #     header_date = sub_date
+                    # else:
+                    print 'strip_date', strip_date
+                    sub_dater = re.match('(^\w+ \w+)(.*)', strip_date)
+                    print 'sub_dater', sub_dater
+                    sub_date = sub_dater.group(1)
+                    print 'sub_date', sub_date
+                    # strip text
+                    if not subbullet_li.next_element.name:
+                        header_date.append(sub_date)
+                        if has_same_date:
+                            header_brief = subbullet_li.contents[-1]
+                        else:
+                            sub_text = sub_dater.group(2).strip()
+                            header_brief.append(re.search('(\w+)(.*)', sub_text).group(0))
+                    else:
+                        header_brief = subbullet_li.contents[-1]
+                        new_bullet_from_li(subbullet_li, header_lists_year_dics, year, sub_date, header_brief)
+            else:
+                header_brief = None
+                strip_date = header_li.next_element[:-2].strip()
+                print 'strip_date', strip_date
+                header_dater = re.match('(^\w+ \w+)', strip_date)
+                print 'header_dater', header_dater
+                header_date = header_dater.group(0)
+                print 'header_date', header_date
+            if not is_911:
+                is_a = header_li
+                while is_a.name != 'a':
+                    is_a = is_a.next_element
+                print 'is_a!', is_a.name, is_a.contents
+                header_href = is_a.get('href')
+                header_bullet = {'year': year, 'date': None, 'link': None, 'brief': None, 'place':None}
+                header_bullet['date'] = header_date
+                header_bullet['link'] = header_href
+                header_bullet['brief'] = header_brief
+                print 'header_bullet = {}'.format(header_bullet)
+                header_dict = {}
+                header_dict[header_bullet['link']] = header_bullet
+                print 'header_dict', header_dict
+                empty_list = []
+                header_lists_year_dics[year] = \
+                    header_lists_year_dics.get(year, {})
+                # print 'header_lists_year_dics', header_lists_year_dics
+                if isinstance(header_date, list):
+                    for each_date in header_date:
+                        header_lists_year_dics[year][each_date] = \
+                            header_lists_year_dics[year].get(each_date, [])
+                        print 'header_lists_year_dics[year][each_date]', header_lists_year_dics[year][each_date]
+                        if header_lists_year_dics[year][each_date]:
+                            header_lists_year_dics[year][each_date].append(header_dict)
+                        else:
+                            header_lists_year_dics[year][each_date] = [header_dict]
+                else:
+                    header_lists_year_dics[year][header_date] = \
+                        header_lists_year_dics[year].get(header_date, [])
+                    print 'header_lists_year_dics[year][header_date]', header_lists_year_dics[year][header_date]
+                    if header_lists_year_dics[year][header_date]:
+                        header_lists_year_dics[year][header_date].append(header_dict)
+                    else:
+                        header_lists_year_dics[year][header_date] = [header_dict]
+                # header_lists_year_dics[year][header_bullet['link']] = header_bullet
+            print 'header_lists_year_dics', header_lists_year_dics
+            # return header_lists_year_dics
+    return header_lists_year_dics
+
 def new_bullet_from_li(header_li, header_lists_year_dics=header_lists_year_dics,
                        year=None, header_date=None, header_brief=None):
+    '''
+    Helper function for parse_crashes_to_dict.
+
+    Inputs: One html 'li' list, and other information
+    pertaining to it.
+
+    Returns: A dictionary of years to dictionaries for the li.
+        -date: the date of the crash.
+        -link: the link to further info on the crash.
+        -brief: a brief description of the accident.
+        -place: the location of the crash.
+    '''
     is_a = header_li
     while is_a.name != 'a':
         is_a = is_a.next_element
@@ -112,115 +239,15 @@ def new_bullet_from_li(header_li, header_lists_year_dics=header_lists_year_dics,
         else:
             header_lists_year_dics[year][header_date] = [header_dict]
 
-for i in range(len(all_header3)):
-    print "TWEET {}\n".format(i)
-    print all_header3[i]
-    this_header = all_header3[i]
-    this_header.next_sibling.next_sibling
-    is_911 = False
-    # if not this_header.span:
-    #     return header_lists_year_dics
-    year = this_header.span.get('id')
-    is_ul = this_header
-    while is_ul.name != 'ul':
-        is_ul = is_ul.next_sibling
-    print 'is_ul!', is_ul.name, is_ul.contents
-    print len(is_ul.contents)
-    listings = [is_ul.contents[i] for i in range(len(is_ul.contents[:-1])) if i%2>0]
-    print 'listings', listings
-    for listing in listings:
-        header_li = listing
-        print 'header_li = {}'.format(header_li)
-        if len(header_li.findChildren('li')) > 0:
-            header_date = []
-            header_brief = []
-            for subbullet_li in header_li.findChildren('li'):
-                if not subbullet_li.next_element.name:
-                    strip_date = subbullet_li.next_element[:-2].strip()
-                else:
-                    strip_date = header_li.next_element[:-2].strip()
-                    is_911 = True
-                # Add description too
-                # if sub_date.strip() == "Septemeber 11":
-                #     header_date = sub_date
-                # else:
-                print 'strip_date', strip_date
-                sub_dater = re.match('(^\w+ \w+)(.*)', strip_date)
-                print 'sub_dater', sub_dater
-                sub_date = sub_dater.group(1)
-                print 'sub_date', sub_date
-                # strip text
-                if not subbullet_li.next_element.name:
-                    header_date.append(sub_date)
-                    sub_text = sub_dater.group(2).strip()
-                    header_brief.append(re.search('(\w+)(.*)', sub_text).group(0))
-                else:
-                    header_brief = subbullet_li.contents[-1]
-                    new_bullet_from_li(subbullet_li, header_lists_year_dics, year, sub_date, header_brief)
-        else:
-            header_brief = None
-            strip_date = header_li.next_element[:-2].strip()
-            print 'strip_date', strip_date
-            header_dater = re.match('(^\w+ \w+)', strip_date)
-            print 'header_dater', header_dater
-            header_date = header_dater.group(0)
-            print 'header_date', header_date
-        if not is_911:
-            is_a = header_li
-            while is_a.name != 'a':
-                is_a = is_a.next_element
-            print 'is_a!', is_a.name, is_a.contents
-            header_href = is_a.get('href')
-            header_bullet = {'year': year, 'date': None, 'link': None, 'brief': None, 'place':None}
-            header_bullet['date'] = header_date
-            header_bullet['link'] = header_href
-            header_bullet['brief'] = header_brief
-            print 'header_bullet = {}'.format(header_bullet)
-            header_dict = {}
-            header_dict[header_bullet['link']] = header_bullet
-            print 'header_dict', header_dict
-            empty_list = []
-            header_lists_year_dics[year] = \
-                header_lists_year_dics.get(year, {})
-            # print 'header_lists_year_dics', header_lists_year_dics
-            if isinstance(header_date, list):
-                for each_date in header_date:
-                    header_lists_year_dics[year][each_date] = \
-                        header_lists_year_dics[year].get(each_date, [])
-                    print 'header_lists_year_dics[year][each_date]', header_lists_year_dics[year][each_date]
-                    if header_lists_year_dics[year][each_date]:
-                        header_lists_year_dics[year][each_date].append(header_dict)
-                    else:
-                        header_lists_year_dics[year][each_date] = [header_dict]
-            else:
-                header_lists_year_dics[year][header_date] = \
-                    header_lists_year_dics[year].get(header_date, [])
-                print 'header_lists_year_dics[year][header_date]', header_lists_year_dics[year][header_date]
-                if header_lists_year_dics[year][header_date]:
-                    header_lists_year_dics[year][header_date].append(header_dict)
-                else:
-                    header_lists_year_dics[year][header_date] = [header_dict]
-            # header_lists_year_dics[year][header_bullet['link']] = header_bullet
-        print 'header_lists_year_dics', header_lists_year_dics
-        # return header_lists_year_dics
-
-print 'header_lists_year_dics', header_lists_year_dics
-
-    for sister in all_header3[i].findNextSiblings():
-        if sister.name == 'h3':
-            break
-        if sister.name == 'li':
-
-    print all_header3[i].next_element  # next_sibling, descendents, children
-
-
-month = re.match(r'(^\w [1-31])', first_header3.next_sibling.next_sibling.contents[1])
-hlist = fh.next_sibling.next_sibling.contents[1]
-month = re.match('(^<li>)(\w [1-31])', fh.next_sibling.next_sibling.contents[1])
-
-first_list = index.find_all('li') .find_all()'a',  href=re.compile('^/wiki/'))
-wiki_lists = index.find_all('li', text="^[A-Z][a-z]+ - ", href=re.compile('^/wiki/'))
-wiki_lists = index.find_all('li')
+crash_dict = parse_crashes_to_dict(all_headers)
+#
+# month = re.match(r'(^\w [1-31])', first_header3.next_sibling.next_sibling.contents[1])
+# hlist = fh.next_sibling.next_sibling.contents[1]
+# month = re.match('(^<li>)(\w [1-31])', fh.next_sibling.next_sibling.contents[1])
+#
+# first_list = index.find_all('li') .find_all()'a',  href=re.compile('^/wiki/'))
+# wiki_lists = index.find_all('li', text="^[A-Z][a-z]+ - ", href=re.compile('^/wiki/'))
+# wiki_lists = index.find_all('li')
 # pattern =
 for wiki_list in wiki_lists:
     print wiki_list['href']
