@@ -119,8 +119,6 @@ def parse_crashes_to_dict(all_header3):
     '''
     header_lists_year_dics = {}
     for i in range(len(all_header3)):
-        print "TWEET {}\n".format(i)
-        print all_header3[i]
         this_header = all_header3[i]
         this_header.next_sibling.next_sibling
         is_911 = False
@@ -131,13 +129,9 @@ def parse_crashes_to_dict(all_header3):
         is_ul = this_header
         while is_ul.name != 'ul':
             is_ul = is_ul.next_sibling
-        print 'is_ul!', is_ul.name, is_ul.contents
-        print len(is_ul.contents)
         listings = [is_ul.contents[i] for i in range(len(is_ul.contents[:-1])) if i%2>0]
-        print 'listings', listings
         for listing in listings:
             header_li = listing
-            print 'header_li = {}'.format(header_li)
             if len(header_li.findChildren('li')) > 0:
                 header_date = []
                 header_brief = []
@@ -154,12 +148,8 @@ def parse_crashes_to_dict(all_header3):
                         strip_date = header_li.next_element[:-2].strip()
                         is_911 = True
                         has_same_date = True
-                    print 'strip_date', strip_date
                     sub_dater = re.match('(^\w+ \w+)(.*)', strip_date)
-                    print 'sub_dater', sub_dater
                     sub_date = sub_dater.group(1)
-                    print 'sub_date', sub_date
-                    # strip text
                     if not subbullet_li.next_element.name:
                         header_date.append(sub_date)
                         if has_same_date:
@@ -169,19 +159,14 @@ def parse_crashes_to_dict(all_header3):
                             header_brief.append(re.search('(\w+)(.*)', sub_text).group(0))
                     else:
                         header_brief = subbullet_li.contents[-1]
-                        print '!! 911 !!', subbullet_li, header_lists_year_dics, year, sub_date, header_brief
                         new_bullet_from_li(subbullet_li, header_lists_year_dics, year, sub_date, header_brief)
             else:
                 strip_date = header_li.next_element[:-2].strip()
-                print 'strip_date', strip_date
                 header_dater = re.match('(^\w+ \w+)(.*)', strip_date)
                 header_date = header_dater.group(1)
-                print 'header_date', header_date
                 header_text = header_li.get_text()
                 header_brief = re.sub(strip_date, '', header_text, 1).strip()
-                print 'header_brief', header_brief
             if not is_911:
-                print 'NOT 911', header_li, header_lists_year_dics, year, header_date, header_brief
                 new_bullet_from_li(header_li, header_lists_year_dics, year, header_date, header_brief)
     return header_lists_year_dics
 
@@ -199,35 +184,29 @@ def new_bullet_from_li(header_li, header_lists_year_dics=dict,
         -brief: a brief description of the accident.
         -place: the location of the crash.
     '''
-    print 'NEW_BULLET', header_li, year, header_date, header_brief
     is_a = header_li
     while is_a.name != 'a':
         is_a = is_a.next_element
-    print 'is_a!', is_a.name, is_a.get('href')
     header_href = is_a.get('href')
     header_bullet = {'year': year, 'date': None, 'link': None, 'brief': None, 'place':None}
     header_bullet['date'] = header_date
     header_bullet['link'] = header_href
     header_bullet['brief'] = header_brief
-    print 'header_bullet = {}'.format(header_bullet)
     header_dict = Crash(header_bullet, header_li)
-    print 'header_dict', header_dict, header_dict.link
     empty_list = []
     header_lists_year_dics[year] = \
         header_lists_year_dics.get(year, {})
     if isinstance(header_date, list):
         for each_date in header_date:
             header_lists_year_dics[year][each_date] = \
-                header_lists_year_dics[year].get(each_date, [])
-            print 'header_lists_year_dics[year][each_date]', header_lists_year_dics[year][each_date]
+                header_lists_year_dics[year].get(each_date, empty_list)
             if header_lists_year_dics[year][each_date]:
                 header_lists_year_dics[year][each_date].append(header_dict)
             else:
                 header_lists_year_dics[year][each_date] = [header_dict]
     else:
         header_lists_year_dics[year][header_date] = \
-            header_lists_year_dics[year].get(header_date, [])
-        print 'header_lists_year_dics[year][header_date]', header_lists_year_dics[year][header_date]
+            header_lists_year_dics[year].get(header_date, empty_list)
         if header_lists_year_dics[year][header_date]:
             header_lists_year_dics[year][header_date].append(header_dict)
         else:
