@@ -210,11 +210,8 @@ def new_bullet_from_li(header_li, header_lists_year_dics=dict,
     header_bullet['link'] = header_href
     header_bullet['brief'] = header_brief
     print 'header_bullet = {}'.format(header_bullet)
-    header_dict = {}
-    crash = Crash(header_bullet, header_li)
-    print 'crash', crash
-    header_dict[header_bullet['link']] = crash
-    print 'header_dict', header_dict
+    header_dict = Crash(header_bullet, header_li)
+    print 'header_dict', header_dict, header_dict.link
     empty_list = []
     header_lists_year_dics[year] = \
         header_lists_year_dics.get(year, {})
