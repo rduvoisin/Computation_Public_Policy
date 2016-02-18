@@ -72,6 +72,64 @@ print len(wiki_links)
 # <h3><span class="mw-headline" id="1924">1924</span><span class="mw-editsection"><span class="mw-editsection-bracket">[</span><a href="/w/index.php?title=List_of_accidents_and_incidents_involving_commercial_aircraft&amp;action=edit&amp;section=5" title="Edit section: 1924">edit</a><span class="mw-editsection-bracket">]</span></span></h3>
 first_header3 = index.find('h3')
 all_headers = index.find_all('h3')
+class Crash(object):
+    '''
+    Initiates a class to hold attributes of a scraped Wiki crash;
+    - *link
+    - *li object
+    - *year
+    - *date
+    - *brief
+    - place
+    - crew
+    - passengers
+    - fatalities
+    - survivors
+    - registration
+    - origin
+    - destination
+    '''
+
+    def __init__(self, key, dictionary, li_object=None):
+
+        self.__link = dictionary['link']
+        self.__li = li_object
+        self.year = dictionary['year']  # Public; mutable anytime.
+        self.date = dictionary['date']  # Public; mutable anytime.
+        self.brief = dictionary['brief']  # Public; mutable anytime.
+        self.place = None
+        self.crew = None
+        self.passengers = None
+        self.fatalities = None
+        self.survivors = None
+        self.registration = None
+        self.origin = None
+        self.destination = None
+
+    @property
+    def link(self):
+        return self.__link
+
+    @property
+    def li(self):
+        return self.__li
+
+    @property
+    def year(self):
+        return self.year
+
+    @property
+    def date(self):
+        return self.date
+
+    @property
+    def brief(self):
+        return self.brief
+
+    @property
+    def place(self):
+        return self.place
+
 
 def parse_crashes_to_dict(all_header3):
     '''
@@ -93,7 +151,7 @@ def parse_crashes_to_dict(all_header3):
         if not this_header.span:
             print "\nOp! All Done!"
             return header_lists_year_dics
-        year = this_header.span.get('id')
+        year = int(this_header.span.get('id'))
         is_ul = this_header
         while is_ul.name != 'ul':
             is_ul = is_ul.next_sibling
@@ -141,7 +199,7 @@ def parse_crashes_to_dict(all_header3):
                         header_brief = subbullet_li.contents[-1]
                         new_bullet_from_li(subbullet_li, header_lists_year_dics, year, sub_date, header_brief)
             else:
-                header_brief = None
+                header_brief = header_li.text
                 strip_date = header_li.next_element[:-2].strip()
                 print 'strip_date', strip_date
                 header_dater = re.match('(^\w+ \w+)', strip_date)
@@ -149,43 +207,44 @@ def parse_crashes_to_dict(all_header3):
                 header_date = header_dater.group(0)
                 print 'header_date', header_date
             if not is_911:
-                is_a = header_li
-                while is_a.name != 'a':
-                    is_a = is_a.next_element
-                print 'is_a!', is_a.name, is_a.contents
-                header_href = is_a.get('href')
-                header_bullet = {'year': year, 'date': None, 'link': None, 'brief': None, 'place':None}
-                header_bullet['date'] = header_date
-                header_bullet['link'] = header_href
-                header_bullet['brief'] = header_brief
-                print 'header_bullet = {}'.format(header_bullet)
-                header_dict = {}
-                header_dict[header_bullet['link']] = header_bullet
-                print 'header_dict', header_dict
-                empty_list = []
-                header_lists_year_dics[year] = \
-                    header_lists_year_dics.get(year, {})
-                # print 'header_lists_year_dics', header_lists_year_dics
-                if isinstance(header_date, list):
-                    for each_date in header_date:
-                        header_lists_year_dics[year][each_date] = \
-                            header_lists_year_dics[year].get(each_date, [])
-                        print 'header_lists_year_dics[year][each_date]', header_lists_year_dics[year][each_date]
-                        if header_lists_year_dics[year][each_date]:
-                            header_lists_year_dics[year][each_date].append(header_dict)
-                        else:
-                            header_lists_year_dics[year][each_date] = [header_dict]
-                else:
-                    header_lists_year_dics[year][header_date] = \
-                        header_lists_year_dics[year].get(header_date, [])
-                    print 'header_lists_year_dics[year][header_date]', header_lists_year_dics[year][header_date]
-                    if header_lists_year_dics[year][header_date]:
-                        header_lists_year_dics[year][header_date].append(header_dict)
-                    else:
-                        header_lists_year_dics[year][header_date] = [header_dict]
-                # header_lists_year_dics[year][header_bullet['link']] = header_bullet
-            print 'header_lists_year_dics', header_lists_year_dics
-            # return header_lists_year_dics
+                new_bullet_from_li(header_li, header_lists_year_dics, year, header_date, header_brief)
+            #     is_a = header_li
+            #     while is_a.name != 'a':
+            #         is_a = is_a.next_element
+            #     print 'is_a!', is_a.name, is_a.contents
+            #     header_href = is_a.get('href')
+            #     header_bullet = {'year': year, 'date': None, 'link': None, 'brief': None, 'place':None}
+            #     header_bullet['date'] = header_date
+            #     header_bullet['link'] = header_href
+            #     header_bullet['brief'] = header_brief
+            #     print 'header_bullet = {}'.format(header_bullet)
+            #     header_dict = {}
+            #     header_dict[header_bullet['link']] = header_bullet
+            #     print 'header_dict', header_dict
+            #     empty_list = []
+            #     header_lists_year_dics[year] = \
+            #         header_lists_year_dics.get(year, {})
+            #     # print 'header_lists_year_dics', header_lists_year_dics
+            #     if isinstance(header_date, list):
+            #         for each_date in header_date:
+            #             header_lists_year_dics[year][each_date] = \
+            #                 header_lists_year_dics[year].get(each_date, [])
+            #             print 'header_lists_year_dics[year][each_date]', header_lists_year_dics[year][each_date]
+            #             if header_lists_year_dics[year][each_date]:
+            #                 header_lists_year_dics[year][each_date].append(header_dict)
+            #             else:
+            #                 header_lists_year_dics[year][each_date] = [header_dict]
+            #     else:
+            #         header_lists_year_dics[year][header_date] = \
+            #             header_lists_year_dics[year].get(header_date, [])
+            #         print 'header_lists_year_dics[year][header_date]', header_lists_year_dics[year][header_date]
+            #         if header_lists_year_dics[year][header_date]:
+            #             header_lists_year_dics[year][header_date].append(header_dict)
+            #         else:
+            #             header_lists_year_dics[year][header_date] = [header_dict]
+            #     header_lists_year_dics[year][header_bullet['link']] = header_bullet
+            # print 'header_lists_year_dics', header_lists_year_dics
+            # # return header_lists_year_dics
     return header_lists_year_dics
 
 def new_bullet_from_li(header_li, header_lists_year_dics=header_lists_year_dics,
