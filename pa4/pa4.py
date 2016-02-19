@@ -22,33 +22,6 @@ index_ref  = "/wiki/List_of_accidents_and_incidents_involving_commercial_aircraf
 index_html = urlopen(base_url + index_ref)
 # Parsed version of html - that is what a BeautifulSoup object is.
 index = BeautifulSoup(index_html, 'lxml')
-# Allows us to visualize how we might distinguish the links we care about
-# from those we don't
-# print index.prettify()
-# Look at the elements of the HTML - where the css style sheets are etc.
-# index.head
-# Now look at the body - this is where the links are
-# index.body
-# index.body.prettify()
-# You might take note of the renderings class of the links you want, because
-# you may be able to just grab all the links that have that style class as
-# a proxy!
-# Pattern = href="/wiki/1933_United_Airlines_Boeing_247_mid-air_explosion" title="
-# /wiki/
-
-# Find the patterns for the types of content you want. (Regex type stuff)
-# re.compile(pattern)
-# \d match digits
-# \w match words (alphanumerics)
-# Many more at https://docs.python.org/3/library/re.html
-# Note, for example that the links of interest follow this pattern:
-#     .../detainees/##
-# wiki_links = index.find_all('a', href=re.compile('^/wiki/'))
-# # pattern =
-# for wiki_link in wiki_links:
-#     print wiki_link['href']
-# print len(wiki_links)
-
 
 class Crash(object):
     '''
@@ -240,25 +213,28 @@ def dict_todataframe(crash_dict):
                 crash_objects.append(crash_dict[year][date][c_ob])
         dates.extend(string_dates)
         events.extend(crash_objects)
-        print {'Dates': string_dates, 'Crash': crash_objects}
-    print '\nFinished:'
-    print {'Dates': len(dates), 'Crash': len(events)}
     return pd.DataFrame({'Date':dates, 'Crash': events})
 
-all_headers = index.find_all('h3')
-crash_dict = parse_crashes_to_dict(all_headers)
+def q1a(pattern='h3', DATE='Date', CRASH='Crash', LINK='Link', BRIEF='Brief'):
+    print 'QUESTION 1: Part A\n Parsing data into dictionary...'
+    all_headers = index.find_all(pattern)
+    crash_dict = parse_crashes_to_dict(all_headers)
+    print '\nBuilding dataframe from dictionary...'
+    crashes = dict_todataframe(crash_dict)
+    crashes[DATE] = pd.to_datetime(crashes[DATE])
+    crashes[LINK] = crashes[CRASH].apply(lambda c: c.link)
+    crashes[BRIEF] = crashes[CRASH].apply(lambda c: c.brief)
+    print '\nDataframe built:\n Shape:', \
+            crashes.shape, '\n Columns:', \
+            crashes.columns, '\n Head 50:\n', \
+            crashes.head(50)
+    return crashes
 
+if __name__ == '__main__':
+    # QUESTION 1
+    # Part A.
+    crashes = q1a()
 
-crashes = dict_todataframe(crash_dict)
-date = 'Date'
-crashes[date] = pd.to_datetime(crashes[date])
-crash = 'Crash'
-var_list = ['link', 'brief']
-# for variable in var_list:
-#     print variable
-#     crashes[variable] = crashes[crash].apply(lambda c: c.variable)
-crashes['Link'] = crashes[crash].apply(lambda c: c.link)
-crashes['Brief'] = crashes[crash].apply(lambda c: c.brief)
 # # wiki_lists = index.find_all('li')
 # for wiki_list in wiki_lists:
 #     print wiki_list['href']
