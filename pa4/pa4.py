@@ -6,8 +6,10 @@ import re
 import time
 from urllib import urlopen
 from bs4 import BeautifulSoup
+import pandas as pd
 '''
 Web Scraping
+
 Part a
 Write a scraper that will produce a pandas dataframe containing the following columns:
 
@@ -41,11 +43,11 @@ index = BeautifulSoup(index_html, 'lxml')
 # Many more at https://docs.python.org/3/library/re.html
 # Note, for example that the links of interest follow this pattern:
 #     .../detainees/##
-wiki_links = index.find_all('a', href=re.compile('^/wiki/'))
-# pattern =
-for wiki_link in wiki_links:
-    print wiki_link['href']
-print len(wiki_links)
+# wiki_links = index.find_all('a', href=re.compile('^/wiki/'))
+# # pattern =
+# for wiki_link in wiki_links:
+#     print wiki_link['href']
+# print len(wiki_links)
 
 
 class Crash(object):
@@ -105,7 +107,6 @@ class Crash(object):
     @property
     def place(self):
         return self._place
-
 
 def parse_crashes_to_dict(all_header3):
     '''
@@ -212,9 +213,52 @@ def new_bullet_from_li(header_li, header_lists_year_dics=dict,
         else:
             header_lists_year_dics[year][header_date] = [header_dict]
 
+def dict_todataframe(crash_dict):
+    '''
+    Helper function for transforming dictionary into matrix.
+    Inputs: One crash dictionary of {years:dates:[crash_objects]}
+    Returns: A pandas DataFrame.
+    '''
+    month_dict = {1: 'January', 2:'February', 3:'March', 4:'April',
+                  5:'May', 6: 'June', 7: 'July', 8: 'August', 9:'September',
+                  10: 'October', 11:'November', 12:'December'}
+
+    dict_month = {}
+    for k in month_dict.keys():
+        dict_month[month_dict[k]] = k
+    dates = []
+    events = []
+    for year in crash_dict.keys():
+        string_dates = []
+        crash_objects = []
+        for date in crash_dict[year].keys():
+            month = dict_month[str(date.split()[0])]
+            day = int(str(date.split()[1]))
+            crash_date = str(year) + str(month).zfill(2) + str(day).zfill(2)
+            for c_ob in range(len(crash_dict[year][date])):
+                string_dates.append(crash_date)
+                crash_objects.append(crash_dict[year][date][c_ob])
+        dates.extend(string_dates)
+        events.extend(crash_objects)
+        print {'Dates': string_dates, 'Crash': crash_objects}
+    print '\nFinished:'
+    print {'Dates': len(dates), 'Crash': len(events)}
+    return pd.DataFrame({'Date':dates, 'Crash': events})
+
 all_headers = index.find_all('h3')
 crash_dict = parse_crashes_to_dict(all_headers)
 
+
+crashes = dict_todataframe(crash_dict)
+date = 'Date'
+crashes[date] = pd.to_datetime(crashes[date])
+crash = 'Crash'
+var_list = ['link', 'brief']
+# for variable in var_list:
+#     print variable
+#     crashes[variable] = crashes[crash].apply(lambda c: c.variable)
+crashes['Link'] = crashes[crash].apply(lambda c: c.link)
+crashes['Brief'] = crashes[crash].apply(lambda c: c.brief)
 # # wiki_lists = index.find_all('li')
 # for wiki_list in wiki_lists:
 #     print wiki_list['href']
