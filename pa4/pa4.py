@@ -81,6 +81,68 @@ class Crash(object):
     def place(self):
         return self._place
 
+    @place.setter
+    def place(self, place_string):
+        self._place = place_string
+
+    @property
+    def crew(self):
+        return self._crew
+
+    @crew.setter
+    def crew(self, crew_string):
+        self._crew = crew_string
+
+    @property
+    def passengers(self):
+        return self._passengers
+
+    @passengers.setter
+    def passengers(self, passengers_string):
+        self._passengers = passengers_string
+
+    @property
+    def fatalities(self):
+        return self._fatalities
+
+    @fatalities.setter
+    def fatalities(self, fatalities_string):
+        self._fatalities = fatalities_string
+
+    @property
+    def survivors(self):
+        return self._survivors
+
+    @survivors.setter
+    def survivors(self, survivors_string):
+        self._survivors = survivors_string
+
+    @property
+    def registration(self):
+        return self._registration
+
+    @registration.setter
+    def registration(self, registration_string):
+        self._registration = registration_string
+
+    @property
+    def origin(self):
+        return self._origin
+
+    @origin.setter
+    def origin(self, origin_string):
+        self._origin = origin_string
+
+    @property
+    def destination(self):
+        return self._destination
+
+    @destination.setter
+    def destination(self, destination_string):
+        self._destination = destination_string
+
+
+
 def parse_crashes_to_dict(all_header3):
     '''
     Input: a group of h3 headers that contain hierarchical html lists.
@@ -229,7 +291,26 @@ def q1a(pattern='h3', DATE='Date', CRASH='Crash', LINK='Link', BRIEF='Brief'):
             crashes.columns, '\n Head 50:\n', \
             crashes.head(50)
     return crashes
+'''
+Part b
 
+Now write a code that clicks each link and scrapes additional
+content from the detailed page associated with each individual
+crash.
+How will you ensure that you rate limit your requests
+to the target web server?
+Once you have implemented this feature,
+scrape the content located in the right column of each
+details page and add it to the pandas dataframe:
+
+    Number of passengers
+    Number of crew
+    Number of fatalities
+    Number of survivors
+    Registration
+    Flight origin
+    Destination
+'''
 if __name__ == '__main__':
     # QUESTION 1
     # Part A.
