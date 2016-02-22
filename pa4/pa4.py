@@ -1,13 +1,16 @@
 # Rebeccah Duvoisin
 # Assignment 4
+from __future__ import  division
 import os
 import sys
-import re
+import re as re
 import time
 from urllib import urlopen
 from bs4 import BeautifulSoup
 import requests
 import pandas as pd
+import numpy as np
+
 '''
 Web Scraping
 
@@ -67,18 +70,22 @@ class Crash(object):
         return self.__li
 
     @property
+    '''Accident Year.'''
     def year(self):
         return self._year
 
     @property
+    '''Accident Date (Month and Day).'''
     def date(self):
         return self._date
 
     @property
+    '''Brief description of the accident.'''
     def brief(self):
         return self._brief
 
     @property
+    '''Location of the accident.'''
     def place(self):
         return self._place
 
@@ -87,6 +94,11 @@ class Crash(object):
         self._place = place_string
 
     @property
+    '''
+    Number of crew members aboard: maybe a string
+    or a list of strings if involving multiple
+    aircraft.
+    '''
     def crew(self):
         return self._crew
 
@@ -95,6 +107,11 @@ class Crash(object):
         self._crew = crew_string
 
     @property
+    '''
+    Number of passengers aboard: maybe a string
+    or a list of strings if involving multiple
+    aircraft.
+    '''
     def passengers(self):
         return self._passengers
 
@@ -103,6 +120,7 @@ class Crash(object):
         self._passengers = passengers_string
 
     @property
+    '''Number of fatalities.'''
     def fatalities(self):
         return self._fatalities
 
@@ -111,6 +129,7 @@ class Crash(object):
         self._fatalities = fatalities_string
 
     @property
+    '''Number of survivors.'''
     def survivors(self):
         return self._survivors
 
@@ -119,6 +138,11 @@ class Crash(object):
         self._survivors = survivors_string
 
     @property
+    '''
+    Flight egistration code: maybe a string
+    or a list of strings if involving multiple
+    aircraft.
+    '''
     def registration(self):
         return self._registration
 
@@ -127,6 +151,11 @@ class Crash(object):
         self._registration = registration_string
 
     @property
+    '''
+    Flight origin: maybe a string
+    or a list of strings if involving multiple
+    aircraft.
+    '''
     def origin(self):
         return self._origin
 
@@ -135,12 +164,48 @@ class Crash(object):
         self._origin = origin_string
 
     @property
+    '''
+    Flight destination: maybe a string
+    or a list of strings if involving multiple
+    aircraft.
+    '''
     def destination(self):
         return self._destination
 
     @destination.setter
     def destination(self, destination_string):
         self._destination = destination_string
+
+    def get_attribute(self, string_name):
+        if string_name == 'link':
+            return self.__link
+        elif string_name == 'li':
+            return self.__li
+        elif string_name == 'year':
+            return self._year
+        elif string_name == 'date':
+            return self._date
+        elif string_name == 'brief':
+            return self._brief
+        elif string_name == 'place':
+            return self._place
+        elif string_name == 'crew':
+            return self._crew
+        elif string_name == 'passengers':
+            return self._passengers
+        elif string_name == 'fatalities':
+            return self._fatalities
+        elif string_name == 'survivors':
+            return self._survivors
+        elif string_name == 'registration':
+            return self._registration
+        elif string_name == 'origin':
+            return self._origin
+        elif string_name == 'destination':
+            return self._destination
+        else:
+            print 'Enter valid attribute name!'
+
 
 def parse_crashes_to_dict(all_header3):
     '''
@@ -276,7 +341,25 @@ def dict_todataframe(crash_dict):
         events.extend(crash_objects)
     return pd.DataFrame({'Date':dates, 'Crash': events})
 
-def make_dataframe(pattern='h3', DATE='Date', CRASH='Crash', LINK='Link', BRIEF='Brief'):
+def make_dataframe(index='index', pattern='h3',
+                   DATE='Date', CRASH='Crash',
+                   LINK='Link', BRIEF='Brief'):
+    '''
+    Make a pandas dataframe from a BeautifulSoup index,
+    and a starting pattern.
+
+    Inputs: A BeautifulSoup object to parse and initial pattern,
+    such as a header type, as a starting node.
+
+    Calls parse_crashes_to_dict to assemble a dictionary
+    of parsed links of interest.
+
+    Returns: A pandas dataframe of Crash objects, from which
+        following columns are also derived from the Crash attributes:
+        - DATE, from CRASH.date,
+        - LINK, from CRASH.link,
+        - BRIEF, from CRASH.brief
+    '''
     print 'QUESTION 1: Part A\n Parsing data into dictionary...'
     all_headers = index.find_all(pattern)
     crash_dict = parse_crashes_to_dict(all_headers)
@@ -290,81 +373,69 @@ def make_dataframe(pattern='h3', DATE='Date', CRASH='Crash', LINK='Link', BRIEF=
             crashes.columns, '\n Head 50:\n', \
             crashes.head(50)
     return crashes
-'''
-Part b
 
-Now write a code that clicks each link and scrapes additional
-content from the detailed page associated with each individual
-crash.
-How will you ensure that you rate limit your requests
-to the target web server?
-Once you have implemented this feature,
-scrape the content located in the right column of each
-details page and add it to the pandas dataframe:
+def grab_link_like_person(url, interval=5):
+    '''
+    Clicks a url address and sets of timer
+    to ensure a specified rate limit for url requests
+    to the target web server.
 
-    Number of passengers
-    Number of crew
-    Number of fatalities
-    Number of survivors
-    Registration
-    Flight origin
-    Destination
-'''
-def grab_link_like_person(url):
-    # html = urlopen(url)
-    source_code = requests.get(url)
-    time.sleep(5)
-    return source_code
+    Returns an opened url page to scrape  content.
+    '''
+    html = urlopen(url)
+    # source_code = requests.get(url)
+    time.sleep(interval)
+    return html
 
 def scrape_link(crash_links):
+    '''
+    Input: a pandas dataframe of Crash objects.
+
+    Calls grab_link_like_person on each Crash object's
+    link attribute.
+
+    Scrapes the first table of the link into a list of cleaned
+    field-value texts for each row in table.
+
+    Builds a flight dictionary from the valid field-value list,
+    into key:value pairs.
+
+    Stores each valid key-value pair into the crash_object
+    under the appropriate attribute:
+        -Number of passengers
+        -Number of crew
+        -Number of fatalities
+        -Number of survivors
+        -Registration
+        -Flight origin
+        -Destination
+    '''
+    count = -1
     for crash_link in crash_links:
+        count += 1
         # Turn the link into an html file
-        print "\n", crash_link.date
-        print crash_link.brief
-        print crash_link.link
-        print base_url + crash_link.link
+        print count, ":\n",  crash_link.year, crash_link.date, base_url + crash_link.link
         link_html = grab_link_like_person(base_url + crash_link.link)
-        # crash_html = BeautifulSoup(link_html, 'lxml')
-        crash_html = BeautifulSoup(link_html.text, 'lxml')
+        crash_html = BeautifulSoup(link_html, 'lxml')
+        # crash_html = BeautifulSoup(link_html.text, 'lxml')
         table_rows = crash_html.find('table').find_all('tr')
         data = []
         for row in table_rows[2:]:
-            # print row
             new_tuple = row.get_text().strip().split('\n')
-            # print new_tuple
-            # key = new_tuple[0]
-            # value = new_tuple[1]
-            # if key =='Date':
-            #     new_value = re.findall(r'(\d+)\-(\d+)\-(\d+)', value)
-            #     new_date =  new_value[0][0] + new_value[0][1] + new_value[0][2]
-            #     new_tuple[1] = new_date
             if new_tuple[0] =='Site':
                 new_tuple.pop()
             # new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
             data.append(new_tuple)
         paired_data = [[element[0], element[1]] for element in data if len(element) > 1]
-        # print 'DATA'
-        # for element in data:
-        #     print element
-        # print 'PAIRED DATA'
-        # for element in paired_data:
-        #     print element
         flight_dict = {}
         for k, v in paired_data:
-            # print "ADDING", 'k',k, 'v', v
             dict_list = flight_dict.keys()
-            # print dict_list
-            # print k in dict_list
             if k in dict_list:
                 make_list = [flight_dict[k]]
-                # print "\nAlready there!", make_list
                 make_list.append(v)
-                # print "Added on:\n", make_list
                 flight_dict[k] = make_list
-                # print flight_dict.keys()
             else:
                 flight_dict[k] = v
-                # print flight_dict.keys()
         # Store new attributes to crash object
         if 'Site' in flight_dict.keys():
             crash_link.place = flight_dict['Site']
@@ -388,8 +459,194 @@ def scrape_link(crash_links):
             crash_link.origin = flight_dict['Flight origin']
         if 'Destination' in flight_dict.keys():
             crash_link.destination = flight_dict['Destination']
-        # return crash_html #, crash_html2
-        # return {'name': name, 'country': country, 'time':time_in_gitmo}
+        print crash_link.place, crash_link.fatalities
+        print crash_link.origin, crash_link.destination
+
+def attributes_to_columns(crash_data,
+                          CRASH='Crash',
+                          PLACE='Place', CREW='Crew',
+                          PASSENGERS='Passengers',
+                          FATALITIES='Fatalities',
+                          SURVIVORS='Survivors',
+                          REGISTRATION='Registration',
+                          ORIGIN='Origin',
+                          DESTINATION='Destination',
+                          attributes={}
+                          ):
+    '''
+    Inputs:
+        - a dataframe that includes a column of
+          Crash objects,
+        - a dictionary of attributes to extract from
+          the Crash objects column.
+
+    Uses apply(lamda crash.attribute) to compile
+    additional columns to the dataframe.
+
+    Returns:
+        - a dataframe with the additional
+          row-wise attribute content.
+    '''
+    if not attributes:
+        attributes = {'place': PLACE,
+                      'crew': CREW,
+                      'passengers': PASSENGERS,
+                      'survivors': SURVIVORS,
+                      'fatalities': FATALITIES,
+                      'registration': REGISTRATION,
+                      'origin': ORIGIN,
+                      'destination': DESTINATION
+                      }
+    for k in attributes:
+        crash_data[attributes[k]] = \
+        crash_data[CRASH].apply(lambda c: c.get_attribute(k))
+    print crash_data.columns, crash_data.index
+    return crash_data
+
+
+def strip_footnote(column_to_strip, within=True):
+    '''Strips footnotes [d]'''
+    column_to_strip.replace(regex=r'(\[\d+\])', value='', inplace=within)
+    column_to_strip.replace(regex=r'(\(including 45 children\))', value='', inplace=within)
+
+    # column_to_strip.apply(lambda x : re.sub(r'(\[\d+\])','', x))
+    return column_to_strip
+
+
+def strip_footnote_whole(dataframe):
+    '''Strips footnotes from all columns \[d\]'''
+    newdf = dataframe.copy()
+    within = True
+    for column in ['Crew', 'Passengers', 'Survivors', 'Fatalities']:
+        print column
+        newdf[column] = strip_footnote(newdf[column], within)
+    return newdf
+
+
+def sum_numbers_of_list(row, list=None):
+    '''
+    Helper for remove_alpha:
+
+    Returns a numeric summation
+    for a list of numbers.
+    '''
+    if list:
+        numeric_list = list
+    else:
+        numeric_list = []
+    if isinstance(row, (str, int, unicode)):
+        if str(row):
+            if str(row) == 'unknown':
+                numeric_list.append(int('0'))
+            elif str(row) == '60 (including 45 children)':
+                numeric_list.append(int('60'))
+            else:
+                numeric_list.append(int(row))
+        return sum(numeric_list)
+    elif str(type(row)) == "<type 'list'>":
+        if isinstance(row[0], (str, int, unicode)):
+            for i in row:
+                if str(i) == 'unknown':
+                    numeric_list.append(int('0'))
+                elif str(i) == '60 (including 45 children)':
+                    numeric_list.append(int('60'))
+                else:
+                    numeric_list.append(int(i))
+            total = sum(numeric_list)
+            numeric_list  = []
+            return total
+        else:
+            for i in row[1:]:
+                numeric_list.append(int(i))
+            return sum_numbers_of_list(row[0], numeric_list)
+    return sum(numeric_list)
+
+
+def remove_alpha(column_to_change, within=True):
+    '''
+    Removes words that aren't digits
+    and sums lists of numbers.
+    '''
+    column_to_change.replace(regex=r'( \(including 45 children\)+)', value='', inplace=within)
+    column_to_change.replace(regex=r'( \(all\)+)', value='', inplace=within)
+    column_to_change.replace(regex=r'([a-zA-Z]+)', value='', inplace=within)
+    column_to_change.replace(regex=r'(unknown)', value='0', inplace=within)
+    column_to_change.replace(regex=r'(\(\d+)(.+)', value='\g<1>', inplace=within)
+    column_to_change.replace(regex=r'(^\d+)(.+)', value='\g<1>', inplace=within)
+    column_to_change.replace(regex=r'(\[\d+)( \(.+\))(.+\])', value='\g<1>\g<3>', inplace=within)
+    column_to_change.replace(regex=r'([ \(+|\( |\(| \)|\) |\)])', value='', inplace=within)
+    column_to_change.replace(regex=r'(\D)', value='', inplace=within)
+    return column_to_change
+
+
+def columns_to_totals(dataframe):
+    '''Converts messy string data to numeric values'''
+    newdf = dataframe.copy()
+    within = True
+    for column in ['Crew', 'Passengers', 'Survivors', 'Fatalities']:
+        print column
+        newdf[column] = remove_alpha(newdf[column], within)
+        newdf[column] = newdf[column].apply(sum_numbers_of_list)
+    return newdf
+# def attributes_to_columns(crash_data,
+                          CRASH='Crash',
+                          PLACE='Place', CREW='Crew',
+                          PASSENGERS='Passengers',
+                          FATALITIES='Fatalities',
+                          SURVIVORS='Survivors',
+                          REGISTRATION='Registration',
+                          ORIGIN='Origin',
+                          DESTINATION='Destination',
+                          attributes={}
+                          ):
+    '''
+    Inputs:
+        - a dataframe that includes a column of
+          Crash objects,
+        - a dictionary of attributes to extract from
+          the Crash objects column.
+
+    Uses apply(lamda crash.attribute) to compile
+    additional columns to the dataframe.
+
+    Returns:
+        - a dataframe with the additional
+          row-wise attribute content.
+    '''
+    if not attributes:
+        attributes = {'place': PLACE,
+                      'crew': CREW,
+                      'passengers': PASSENGERS,
+                      'survivors': SURVIVORS,
+                      'fatalities': FATALITIES,
+                      'registration': REGISTRATION,
+                      'origin': ORIGIN,
+                      'destination': DESTINATION
+                      }
+    # for k in attributes:
+    #     # print k, attributes[k]
+    #     crash_data[attributes[k]] = crash_data[CRASH].apply(lambda c: c.k)
+    crash_data[PLACE] = crash_data[CRASH].apply(lambda c: c.place)
+    crash_data[CREW] = crash_data[CRASH].apply(lambda c: c.crew)
+    crash_data[PASSENGERS] = crash_data[CRASH].apply(lambda c: c.passengers)
+    crash_data[SURVIVORS] = crash_data[CRASH].apply(lambda c: c.survivors)
+    crash_data[FATALITIES] = crash_data[CRASH].apply(lambda c: c.fatalities)
+    crash_data[REGISTRATION] = crash_data[CRASH].apply(lambda c: c.registration)
+    crash_data[ORIGIN] = crash_data[CRASH].apply(lambda c: c.origin)
+    crash_data[DESTINATION] = crash_data[CRASH].apply(lambda c: c.destination)
+    print crash_data.columns, crash_data.index
+    return crash_data
+
+
+        # .apply(lambda c: c.link)
+    # crash_link.place = flight_dict['Site']
+    # crash_link.crew = flight_dict['Crew']
+    # crash_link.passengers = flight_dict['Passengers']
+    # crash_link.fatalities = flight_dict['Fatalities']
+    # crash_link.passengers = flight_dict['Survivors']
+    # crash_link.registration = flight_dict['Operator']
+    # crash_link.origin = flight_dict['Flight origin']
+    # crash_link.destination = flight_dict['Destination']
 
 
 if __name__ == '__main__':
@@ -400,88 +657,43 @@ if __name__ == '__main__':
     CRASH='Crash'
     LINK='Link'
     BRIEF='Brief'
+    crashes = crashes.sort_values(by=[DATE])
+    crashes.index = range(0, len(crashes))
+    # QUESTION 1
+    # Part B.
     scrape_link(crashes[CRASH])
-    crashes[CRASH][0]
-    # table_rows = crash_html.find('table', {'class' : 'infobox vcard vevent'}).find_all('tr')
-    # data = []
-    # for row in table_rows[2:]:
-    #     print row
-    #     new_tuple = row.get_text().strip().split('\n')
-    #     key = new_tuple[0]
-    #     value = new_tuple[1]
-    #     if key =='Date':
-    #         new_value = re.findall(r'(\d+)\-(\d+)\-(\d+)', value)
-    #         new_date =  new_value[0][0] + new_value[0][1] + new_value[0][2]
-    #         new_tuple[1] = new_date
-    #     if key =='Site':
-    #         new_tuple.pop()
-    #     new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
-    #     data.append(new_tuple)
-    # flight_dict = {}
-    # for k, v in data:
-    #     flight_dict[k] = v
-    # # Store new attributes to crash object
-    # crash_link.place = flight_dict['Site']
-    # crash_link.crew = flight_dict['Crew']
-    # crash_link.passengers = flight_dict['Passengers']
-    # crash_link.fatalities = flight_dict['Fatalities']
-    # crash_link.passengers = flight_dict['Survivors']
-    # crash_link.registration = flight_dict['Operator']
-    # crash_link.origin = flight_dict['Flight origin']
-    # crash_link.destination = flight_dict['Destination']
-    # print data
-    # for k, v in data:
-    #     print v, k
-    #
-# ctext = 'https://en.wikipedia.org/wiki/1922_Picardie_mid-air_collision'
-# source_code = requests.get(ctext)
-# picard = BeautifulSoup(source_code.text, 'lxml')
-# table_rows = picard.find('table', {'class' : 'infobox vcard vevent'}).find_all('tr')
-# data = []
-# for row in table_rows[2:]:
-#     print row
-#     new_tuple = row.get_text().strip().split('\n')
-#     print new_tuple
-#     data.append(new_tuple)
-#     # new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
-#
-#     data.append(new_tuple)
-# data
-    # ctext = 'https://en.wikipedia.org/wiki/List_of_accidents_and_incidents_involving_commercial_aircraft/wiki/1919_Verona_Caproni_Ca.48_crash'
-    # vtext = 'https://en.wikipedia.org/wiki/1919_Verona_Caproni_Ca.48_crash'
-    # source_code = requests.get('https://en.wikipedia.org/wiki/1919_Verona_Caproni_Ca.48_crash')
-    # verona = BeautifulSoup(source_code.text, 'lxml')
-    # x = BeautifulSoup(link_html.text, 'lxml')
-    # h1 = crash_html.find_all('h1')[0]
-    # body = crash_html.find_all('div', {'class':'mw-body-content'})
-    # t1 = crash_html.find_all('table')[0]
-    # body = crash_html.find_all('div', {'class':'mw-body-content'})
-    # data = []
-    # table = crash_html.find('table') #, attrs={'class':'lineItemsTable'})
-    # table = crash_html.find('table', {'class':'infobox-vcard-vevent'})
-    # table_body = crash_html.find('table')
-    # data2 = []
-    # rows = crash_html.find_all('table')[1].find_all('tr')
-    # for row in rows:
-    #     cols = row.find_all('td')
-    #     cols
-    #     cols = [ele.text.strip() for ele in cols]
-    #     data2.append([ele for ele in cols if ele]) # Get rid of empty values
-    # crash_html = grab_link_like_person(base_url + index_ref + crash_links)
-    # scrape_link(crashes[LINK][2])
-    # url  = base_url + index_ref + crashes[LINK][2]
-    # crash_html = urlopen(url)
-    # crash_html = grab_link_like_person(base_url + index_ref + crashes[LINK][2])
-# Define a function wrapper for grabbing
+    crashed = crashes.copy()
+    more_crashes = attributes_to_columns(crashed)
+    # Part C.
+    # Which were the top 5 most deadly aviation incidents?
+    PLACE='Place'
+    CREW='Crew'
+    PASSENGERS='Passengers'
+    FATALITIES='Fatalities'
+    SURVIVORS='Survivors'
+    REGISTRATION='Registration'
+    ORIGIN='Origin'
+    DESTINATION='Destination'
+    unifat = more_crashes[FATALITIES].unique()
+    FAT_INT = 'Fatalities_Int'
+    # more_crashes[FAT_INT] = more_crashes[FATALITIES]
+    # more_crashes[FAT_INT] = strip_footnote(more_crashes[FAT_INT])
+    # more_crashes[[FATALITIES, FAT_INT]].head(20)
+    run testing.py
+    more_crashes['Crew_Int'] = more_crashes['Crew']
+    more_crashed  = strip_footnote_whole(more_crashes)
+    more_crashes.head(20)
+    more_crashed.head(20)
+    more_crashed  = strip_footnote_whole(more_crashes)
+    some  = more_crashed[1:680]
+    num_crash = columns_to_totals(some)
+    num_crash.head(10)
 
-#
-
-        # go to the link
-        # save the stuff we care about
-# prisoners = {}
-# link_num = 0
-# for link in prisoner_links:
-#     link_num += 1
-#     print link_num
-#     # prisoners[link_num] = scrape_link[link]
-# print prisoners
+    numcrash = num_crash.sort_values(by=[FATALITIES], ascending=False)
+    numcrash.head(10)
+    numcrash.describe()
+    passcrash= num_crash.sort_values(by=[PASSENGERS], ascending=False)
+    passcrash.head(50)
+    # subfat = more_crashes[FATALITIES][0]
+    # newfat = re.sub(r'(\[\d+\])','', subfat)
+    # unique_fatalities = more_crashes[FATALITIES].unique()sort_values(by=[DATE])
