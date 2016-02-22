@@ -6,6 +6,7 @@ import re
 import time
 from urllib import urlopen
 from bs4 import BeautifulSoup
+import requests
 import pandas as pd
 '''
 Web Scraping
@@ -141,8 +142,6 @@ class Crash(object):
     def destination(self, destination_string):
         self._destination = destination_string
 
-
-
 def parse_crashes_to_dict(all_header3):
     '''
     Input: a group of h3 headers that contain hierarchical html lists.
@@ -277,7 +276,7 @@ def dict_todataframe(crash_dict):
         events.extend(crash_objects)
     return pd.DataFrame({'Date':dates, 'Crash': events})
 
-def q1a(pattern='h3', DATE='Date', CRASH='Crash', LINK='Link', BRIEF='Brief'):
+def make_dataframe(pattern='h3', DATE='Date', CRASH='Crash', LINK='Link', BRIEF='Brief'):
     print 'QUESTION 1: Part A\n Parsing data into dictionary...'
     all_headers = index.find_all(pattern)
     crash_dict = parse_crashes_to_dict(all_headers)
@@ -311,30 +310,174 @@ details page and add it to the pandas dataframe:
     Flight origin
     Destination
 '''
+def grab_link_like_person(url):
+    # html = urlopen(url)
+    source_code = requests.get(url)
+    time.sleep(5)
+    return source_code
+
+def scrape_link(crash_links):
+    for crash_link in crash_links:
+        # Turn the link into an html file
+        print "\n", crash_link.date
+        print crash_link.brief
+        print crash_link.link
+        print base_url + crash_link.link
+        link_html = grab_link_like_person(base_url + crash_link.link)
+        # crash_html = BeautifulSoup(link_html, 'lxml')
+        crash_html = BeautifulSoup(link_html.text, 'lxml')
+        table_rows = crash_html.find('table').find_all('tr')
+        data = []
+        for row in table_rows[2:]:
+            # print row
+            new_tuple = row.get_text().strip().split('\n')
+            # print new_tuple
+            # key = new_tuple[0]
+            # value = new_tuple[1]
+            # if key =='Date':
+            #     new_value = re.findall(r'(\d+)\-(\d+)\-(\d+)', value)
+            #     new_date =  new_value[0][0] + new_value[0][1] + new_value[0][2]
+            #     new_tuple[1] = new_date
+            if new_tuple[0] =='Site':
+                new_tuple.pop()
+            # new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
+            data.append(new_tuple)
+        paired_data = [[element[0], element[1]] for element in data if len(element) > 1]
+        # print 'DATA'
+        # for element in data:
+        #     print element
+        # print 'PAIRED DATA'
+        # for element in paired_data:
+        #     print element
+        flight_dict = {}
+        for k, v in paired_data:
+            # print "ADDING", 'k',k, 'v', v
+            dict_list = flight_dict.keys()
+            # print dict_list
+            # print k in dict_list
+            if k in dict_list:
+                make_list = [flight_dict[k]]
+                # print "\nAlready there!", make_list
+                make_list.append(v)
+                # print "Added on:\n", make_list
+                flight_dict[k] = make_list
+                # print flight_dict.keys()
+            else:
+                flight_dict[k] = v
+                # print flight_dict.keys()
+        # Store new attributes to crash object
+        if 'Site' in flight_dict.keys():
+            crash_link.place = flight_dict['Site']
+        if 'Crew' in flight_dict.keys():
+            crash_link.crew = flight_dict['Crew']
+        if 'Passengers' in flight_dict.keys():
+            crash_link.passengers = flight_dict['Passengers']
+        if 'Fatalities' in flight_dict.keys():
+            crash_link.fatalities = flight_dict['Fatalities']
+        if 'Total fatalities' in flight_dict.keys():
+            crash_link.fatalities = flight_dict['Total fatalities']
+        if 'Survivors' in flight_dict.keys():
+            crash_link.survivors = flight_dict['Survivors']
+        if 'Total survivors' in flight_dict.keys():
+            crash_link.survivors = flight_dict['Total survivors']
+        if 'Operator' in flight_dict.keys():
+            crash_link.registration = flight_dict['Operator']
+        if 'Registration' in flight_dict.keys():
+            crash_link.registration = flight_dict['Registration']
+        if 'Flight origin' in flight_dict.keys():
+            crash_link.origin = flight_dict['Flight origin']
+        if 'Destination' in flight_dict.keys():
+            crash_link.destination = flight_dict['Destination']
+        # return crash_html #, crash_html2
+        # return {'name': name, 'country': country, 'time':time_in_gitmo}
+
+
 if __name__ == '__main__':
     # QUESTION 1
     # Part A.
-    crashes = q1a()
-
-# # wiki_lists = index.find_all('li')
-# for wiki_list in wiki_lists:
-#     print wiki_list['href']
-# # Define a function wrapper for grabbing
-# def try_request(url):
-#     html = urlopen(url)
-#     time.sleep(5)
-#     return html
+    crashes = make_dataframe()
+    DATE='Date'
+    CRASH='Crash'
+    LINK='Link'
+    BRIEF='Brief'
+    scrape_link(crashes[CRASH])
+    crashes[CRASH][0]
+    # table_rows = crash_html.find('table', {'class' : 'infobox vcard vevent'}).find_all('tr')
+    # data = []
+    # for row in table_rows[2:]:
+    #     print row
+    #     new_tuple = row.get_text().strip().split('\n')
+    #     key = new_tuple[0]
+    #     value = new_tuple[1]
+    #     if key =='Date':
+    #         new_value = re.findall(r'(\d+)\-(\d+)\-(\d+)', value)
+    #         new_date =  new_value[0][0] + new_value[0][1] + new_value[0][2]
+    #         new_tuple[1] = new_date
+    #     if key =='Site':
+    #         new_tuple.pop()
+    #     new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
+    #     data.append(new_tuple)
+    # flight_dict = {}
+    # for k, v in data:
+    #     flight_dict[k] = v
+    # # Store new attributes to crash object
+    # crash_link.place = flight_dict['Site']
+    # crash_link.crew = flight_dict['Crew']
+    # crash_link.passengers = flight_dict['Passengers']
+    # crash_link.fatalities = flight_dict['Fatalities']
+    # crash_link.passengers = flight_dict['Survivors']
+    # crash_link.registration = flight_dict['Operator']
+    # crash_link.origin = flight_dict['Flight origin']
+    # crash_link.destination = flight_dict['Destination']
+    # print data
+    # for k, v in data:
+    #     print v, k
+    #
+# ctext = 'https://en.wikipedia.org/wiki/1922_Picardie_mid-air_collision'
+# source_code = requests.get(ctext)
+# picard = BeautifulSoup(source_code.text, 'lxml')
+# table_rows = picard.find('table', {'class' : 'infobox vcard vevent'}).find_all('tr')
+# data = []
+# for row in table_rows[2:]:
+#     print row
+#     new_tuple = row.get_text().strip().split('\n')
+#     print new_tuple
+#     data.append(new_tuple)
+#     # new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
 #
-# def scrape_link(links):
-#     for link in links:
-#         # Turn the link into an html file
-#         prisoner_html = try_request(base_url + index_ref)
-#         name = test.find('h1').get_text().strip()
-#         country = test.find('a', href=re.compile('/country/')).get_text()
-#         time_in_gitmo= test.find(text=re.compile('for \d+ years')).lstrip('for ').strip().rsplit('.\n\n',1)[0]
-#         return {'name': name, 'country': country, 'time':time_in_gitmo}
-#         # go to the link
-#         # save the stuff we care about
+#     data.append(new_tuple)
+# data
+    # ctext = 'https://en.wikipedia.org/wiki/List_of_accidents_and_incidents_involving_commercial_aircraft/wiki/1919_Verona_Caproni_Ca.48_crash'
+    # vtext = 'https://en.wikipedia.org/wiki/1919_Verona_Caproni_Ca.48_crash'
+    # source_code = requests.get('https://en.wikipedia.org/wiki/1919_Verona_Caproni_Ca.48_crash')
+    # verona = BeautifulSoup(source_code.text, 'lxml')
+    # x = BeautifulSoup(link_html.text, 'lxml')
+    # h1 = crash_html.find_all('h1')[0]
+    # body = crash_html.find_all('div', {'class':'mw-body-content'})
+    # t1 = crash_html.find_all('table')[0]
+    # body = crash_html.find_all('div', {'class':'mw-body-content'})
+    # data = []
+    # table = crash_html.find('table') #, attrs={'class':'lineItemsTable'})
+    # table = crash_html.find('table', {'class':'infobox-vcard-vevent'})
+    # table_body = crash_html.find('table')
+    # data2 = []
+    # rows = crash_html.find_all('table')[1].find_all('tr')
+    # for row in rows:
+    #     cols = row.find_all('td')
+    #     cols
+    #     cols = [ele.text.strip() for ele in cols]
+    #     data2.append([ele for ele in cols if ele]) # Get rid of empty values
+    # crash_html = grab_link_like_person(base_url + index_ref + crash_links)
+    # scrape_link(crashes[LINK][2])
+    # url  = base_url + index_ref + crashes[LINK][2]
+    # crash_html = urlopen(url)
+    # crash_html = grab_link_like_person(base_url + index_ref + crashes[LINK][2])
+# Define a function wrapper for grabbing
+
+#
+
+        # go to the link
+        # save the stuff we care about
 # prisoners = {}
 # link_num = 0
 # for link in prisoner_links:
