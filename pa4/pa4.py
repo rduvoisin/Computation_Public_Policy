@@ -10,17 +10,7 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import numpy as np
-
-'''
-Web Scraping
-
-Part a
-Write a scraper that will produce a pandas dataframe containing the following columns:
-
-    When the accident occurred (year, month, and day - use a datetime object)
-    The short text description (everything to the right of the date)
-    The link to the detail page.
-'''
+import json
 base_url = "https://en.wikipedia.org"
 index_ref  = "/wiki/List_of_accidents_and_incidents_involving_commercial_aircraft"
 index_html = urlopen(base_url + index_ref)
@@ -417,16 +407,13 @@ def scrape_link(crash_links):
         print count, ":\n",  crash_link.year, crash_link.date, base_url + crash_link.link
         link_html = grab_link_like_person(base_url + crash_link.link)
         crash_html = BeautifulSoup(link_html, 'lxml')
-        # crash_html = BeautifulSoup(link_html.text, 'lxml')
         table_rows = crash_html.find('table').find_all('tr')
         table = crash_html.find('table').get_text().strip().encode('utf-8')
-        # print 'table', len(table), table
         rows = table_rows
-        # print 'rows', rows
         row_tuples = [r.find_all(['th','td']) for r in rows]
         n_tuples = len(row_tuples)
-        # print n_tuples,'row_tuples', row_tuples
         data = []
+        # Compile tuples from table rows
         for row in row_tuples[2:]:
             for i in range(len(row)):
                 row[i] = row[i].get_text().strip().encode('utf-8')
@@ -446,34 +433,10 @@ def scrape_link(crash_links):
                     row[1] = int(anymatches.groups()[1])
                 else:
                     row[1] = None
-            # print '\nrow', row
             data.append(row)
-        # for row in table_rows[2:]:
-        #     new_tuple = []
-        #     new_tuple = row.th.get_text().strip().split('\n')
-        #     new_tuple.append(row.td.get_text().strip())
-        #     new_tuple[0] = str(new_tuple[0].encode('utf-8'))
-        #     new_tuple[1] = str(new_tuple[1].encode('utf-8'))
-        #     if new_tuple[0] =='Site':
-        #         new_tuple[1] = new_tuple[1].split('\n')[0]
-        #     elif new_tuple[0] in ['Crew', 'Passengers', 'Survivors',
-        #                           'Fatalities', 'Total survivors',
-        #                           'Total fatalities']:
-        #         print  new_tuple[0], new_tuple
-        #         new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
-        #         print  new_tuple[0], new_tuple
-        #         pattern = re.compile('(\D*)(\d*)')
-        #         number_string = new_tuple[1]
-        #         anymatches = re.match(pattern, number_string)
-        #         print 'anymatches.groups()', anymatches.groups(), anymatches.groups()[1]
-        #         new_tuple[1] = anymatches.groups()[1]
-        #         # first_number = re.match(new_tuple[1], pattern).groups()[0]
-        #         # print 'first_number', first_number
-        #     # new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
-        #     print new_tuple
-        #     data.append(new_tuple)
         paired_data = [[element[0], element[1]] for element in data if len(element) > 1]
         flight_dict = {}
+        # Compile data dictionary from table tuples
         for k, v in paired_data:
             dict_list = flight_dict.keys()
             if k in dict_list:
@@ -506,7 +469,6 @@ def scrape_link(crash_links):
         if 'Destination' in flight_dict.keys():
             crash_link.destination = flight_dict['Destination']
         print 'Place = ', crash_link.place, ',', crash_link.fatalities, ' killed.'
-        # print crash_link.origin, crash_link.destination
 
 def attributes_to_columns(crash_data,
                           CRASH='Crash',
@@ -646,11 +608,13 @@ if __name__ == '__main__':
     BRIEF='Brief'
     crashes = crashes.sort_values(by=[DATE])
     crashes.index = range(0, len(crashes))
+    print 'Part A. By Origin:\n', crashes.head(10)
     # QUESTION 1
     # Part B.
     scrape_link(crashes[CRASH])
     crashed = crashes.copy()
     more_crashes = attributes_to_columns(crashed)
+    print 'Part B. Append more columns:\n', more_crashes.columns, more_crashes.head(10)
     # Part C.
     # Which were the top 5 most deadly aviation incidents?
     # Report the number of fatalities and the flight origin for each.
@@ -667,30 +631,34 @@ if __name__ == '__main__':
     numcrashes = more_crashes.copy()
     numcrashes = numcrashes.sort_values(by=[FATALITIES], ascending=False)
     numcrashes.index = range(0, len(crashes))
-    print numcrashes[FATALITIES,ORIGIN][:10]
+    print 'Part C. By Most Fatalities:\n' numcrashes[FATALITIES,ORIGIN][:10]
     # Part D
     # Which flight origin has the highest number of aviation
     # incidents in the last 25 years?
     by_origin = df.numcrashes.groupby([ORIGIN]).count()
-
-    # more_crashes[FAT_INT] = more_crashes[FATALITIES]
-    # more_crashes[FAT_INT] = strip_footnote(more_crashes[FAT_INT])
-    # more_crashes[[FATALITIES, FAT_INT]].head(20)
+    print 'Part D. By Origin:\n', by_origin
+    # Part E.
+    # Save this Dataframe as JSON and commit to your repo,
+    # along with the notebook / python code used to do this assignment.
+    import json
+    json_dict = [{colname : row[i] for i, colname in enumerate(more_crashes.columns)} for row in more_crashes.iterrows()]
+    json_dict
+    json_crashes = json.dumps(json_dict)
     # run testing.py
-    more_crashes['Crew_Int'] = more_crashes['Crew']
+    # more_crashes['Crew_Int'] = more_crashes['Crew']
     # more_crashed  = strip_footnote_whole(more_crashes)
-    more_crashes.head(20)
-    more_crashed.head(20)
+    # more_crashes.head(20)
+    # more_crashed.head(20)
     # more_crashed  = strip_footnote_whole(more_crashes)
-    some  = more_crashed[1:680]
+    # some  = more_crashed[1:680]
     # num_crash = columns_to_totals(some)
-    num_crash.head(10)
-
-    numcrash = num_crash.sort_values(by=[FATALITIES], ascending=False)
-    numcrash.head(10)
-    numcrash.describe()
-    passcrash= num_crash.sort_values(by=[PASSENGERS], ascending=False)
-    passcrash.head(50)
+    # num_crash.head(10)
+    #
+    # numcrash = num_crash.sort_values(by=[FATALITIES], ascending=False)
+    # numcrash.head(10)
+    # numcrash.describe()
+    # passcrash= num_crash.sort_values(by=[PASSENGERS], ascending=False)
+    # passcrash.head(50)
     # subfat = more_crashes[FATALITIES][0]
     # newfat = re.sub(r'(\[\d+\])','', subfat)
     # unique_fatalities = more_crashes[FATALITIES].unique()sort_values(by=[DATE])
