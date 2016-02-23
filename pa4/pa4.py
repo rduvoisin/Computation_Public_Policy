@@ -615,7 +615,7 @@ if __name__ == '__main__':
     crashed = crashes.copy()
     more_crashes = attributes_to_columns(crashed)
     print 'Part B. Append more columns:\n', more_crashes.columns, more_crashes.head(10)
-    # Part C.
+    # QUESTION 1 Part C.
     # Which were the top 5 most deadly aviation incidents?
     # Report the number of fatalities and the flight origin for each.
     PLACE='Place'
@@ -632,12 +632,12 @@ if __name__ == '__main__':
     numcrashes = numcrashes.sort_values(by=[FATALITIES], ascending=False)
     numcrashes.index = range(0, len(crashes))
     print 'Part C. By Most Fatalities:\n' numcrashes[FATALITIES,ORIGIN][:10]
-    # Part D
+    # QUESTION 1 Part D
     # Which flight origin has the highest number of aviation
     # incidents in the last 25 years?
     by_origin = df.numcrashes.groupby([ORIGIN]).count()
     print 'Part D. By Origin:\n', by_origin
-    # Part E.
+    # QUESTION 1 Part E.
     # Save this Dataframe as JSON and commit to your repo,
     # along with the notebook / python code used to do this assignment.
     import json
