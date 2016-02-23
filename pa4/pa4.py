@@ -422,7 +422,7 @@ def scrape_link(crash_links):
             elif row[0] in ['Crew', 'Passengers', 'Survivors',
                                   'Fatalities', 'Total survivors',
                                   'Total fatalities']:
-                print '\tSPECIAL', row[0], row
+                # print '\tSPECIAL', row[0], row
                 row[1] = re.sub(r'(\[\d+\])','', row[1])
                 # print  row[0], row
                 pattern = re.compile('(\D*)(\d*)')
@@ -440,9 +440,19 @@ def scrape_link(crash_links):
         for k, v in paired_data:
             dict_list = flight_dict.keys()
             if k in dict_list:
-                make_list = [flight_dict[k]]
-                make_list.append(v)
-                flight_dict[k] = make_list
+                if k in ['Crew', 'Passengers', 'Survivors',
+                         'Fatalities', 'Total survivors',
+                         'Total fatalities']:
+                    summation = flight_dict[k]
+                    if summation:
+                        summation += v
+                    else:
+                        summation = v
+                    flight_dict[k] = summation
+                else:
+                    make_list = [flight_dict[k]]
+                    make_list.append(v)
+                    flight_dict[k] = make_list
             else:
                 flight_dict[k] = v
         # Store new attributes to crash object
@@ -470,27 +480,20 @@ def scrape_link(crash_links):
             crash_link.destination = flight_dict['Destination']
         print 'Place = ', crash_link.place, ',', crash_link.fatalities, ' killed.'
 
-def attributes_to_columns(crash_data,
-                          CRASH='Crash',
-                          PLACE='Place', CREW='Crew',
-                          PASSENGERS='Passengers',
-                          FATALITIES='Fatalities',
-                          SURVIVORS='Survivors',
-                          REGISTRATION='Registration',
-                          ORIGIN='Origin',
-                          DESTINATION='Destination',
+def attributes_to_columns(crash_data, CRASH='Crash', PLACE='Place', CREW='Crew',
+                          PASSENGERS='Passengers', FATALITIES='Fatalities',
+                          SURVIVORS='Survivors', REGISTRATION='Registration',
+                          ORIGIN='Origin', DESTINATION='Destination',
                           attributes={}
                           ):
     '''
+    Uses apply(lamda crash_object.get_attribute(name)) to populate
+    additional columns to the dataframe.
     Inputs:
         - a dataframe that includes a column of
           Crash objects,
         - a dictionary of attributes to extract from
           the Crash objects column.
-
-    Uses apply(lamda crash.attribute) to compile
-    additional columns to the dataframe.
-
     Returns:
         - a dataframe with the additional
           row-wise attribute content.
@@ -631,7 +634,7 @@ if __name__ == '__main__':
     numcrashes = more_crashes.copy()
     numcrashes = numcrashes.sort_values(by=[FATALITIES], ascending=False)
     numcrashes.index = range(0, len(crashes))
-    print 'Part C. By Most Fatalities:\n' numcrashes[FATALITIES,ORIGIN][:10]
+    print 'Part C. By Most Fatalities:\n', numcrashes[FATALITIES,ORIGIN][:10]
     # QUESTION 1 Part D
     # Which flight origin has the highest number of aviation
     # incidents in the last 25 years?
@@ -643,7 +646,7 @@ if __name__ == '__main__':
     import json
     json_dict = [{colname : row[i] for i, colname in enumerate(more_crashes.columns)} for row in more_crashes.iterrows()]
     json_dict
-    json_crashes = json.dumps(json_dict)
+    # json_crashes = json.dumps(json_dict)
     # run testing.py
     # more_crashes['Crew_Int'] = more_crashes['Crew']
     # more_crashed  = strip_footnote_whole(more_crashes)
