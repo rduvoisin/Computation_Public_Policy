@@ -70,23 +70,23 @@ class Crash(object):
         return self.__li
 
     @property
-    '''Accident Year.'''
     def year(self):
+        '''Accident Year.'''
         return self._year
 
     @property
-    '''Accident Date (Month and Day).'''
     def date(self):
+        '''Accident Date (Month and Day).'''
         return self._date
 
     @property
-    '''Brief description of the accident.'''
     def brief(self):
+        '''Brief description of the accident.'''
         return self._brief
 
     @property
-    '''Location of the accident.'''
     def place(self):
+        '''Location of the accident.'''
         return self._place
 
     @place.setter
@@ -94,12 +94,12 @@ class Crash(object):
         self._place = place_string
 
     @property
-    '''
-    Number of crew members aboard: maybe a string
-    or a list of strings if involving multiple
-    aircraft.
-    '''
     def crew(self):
+        '''
+        Number of crew members aboard: maybe a string
+        or a list of strings if involving multiple
+        aircraft.
+        '''
         return self._crew
 
     @crew.setter
@@ -107,12 +107,12 @@ class Crash(object):
         self._crew = crew_string
 
     @property
-    '''
-    Number of passengers aboard: maybe a string
-    or a list of strings if involving multiple
-    aircraft.
-    '''
     def passengers(self):
+        '''
+        Number of passengers aboard: maybe a string
+        or a list of strings if involving multiple
+        aircraft.
+        '''
         return self._passengers
 
     @passengers.setter
@@ -120,8 +120,8 @@ class Crash(object):
         self._passengers = passengers_string
 
     @property
-    '''Number of fatalities.'''
     def fatalities(self):
+        '''Number of fatalities.'''
         return self._fatalities
 
     @fatalities.setter
@@ -129,8 +129,8 @@ class Crash(object):
         self._fatalities = fatalities_string
 
     @property
-    '''Number of survivors.'''
     def survivors(self):
+        '''Number of survivors.'''
         return self._survivors
 
     @survivors.setter
@@ -138,12 +138,12 @@ class Crash(object):
         self._survivors = survivors_string
 
     @property
-    '''
-    Flight egistration code: maybe a string
-    or a list of strings if involving multiple
-    aircraft.
-    '''
     def registration(self):
+        '''
+        Flight egistration code: maybe a string
+        or a list of strings if involving multiple
+        aircraft.
+        '''
         return self._registration
 
     @registration.setter
@@ -151,12 +151,12 @@ class Crash(object):
         self._registration = registration_string
 
     @property
-    '''
-    Flight origin: maybe a string
-    or a list of strings if involving multiple
-    aircraft.
-    '''
     def origin(self):
+        '''
+        Flight origin: maybe a string
+        or a list of strings if involving multiple
+        aircraft.
+        '''
         return self._origin
 
     @origin.setter
@@ -164,12 +164,12 @@ class Crash(object):
         self._origin = origin_string
 
     @property
-    '''
-    Flight destination: maybe a string
-    or a list of strings if involving multiple
-    aircraft.
-    '''
     def destination(self):
+        '''
+        Flight destination: maybe a string
+        or a list of strings if involving multiple
+        aircraft.
+        '''
         return self._destination
 
     @destination.setter
@@ -341,7 +341,7 @@ def dict_todataframe(crash_dict):
         events.extend(crash_objects)
     return pd.DataFrame({'Date':dates, 'Crash': events})
 
-def make_dataframe(index='index', pattern='h3',
+def make_dataframe(pattern='h3',
                    DATE='Date', CRASH='Crash',
                    LINK='Link', BRIEF='Brief'):
     '''
@@ -419,13 +419,59 @@ def scrape_link(crash_links):
         crash_html = BeautifulSoup(link_html, 'lxml')
         # crash_html = BeautifulSoup(link_html.text, 'lxml')
         table_rows = crash_html.find('table').find_all('tr')
+        table = crash_html.find('table').get_text().strip().encode('utf-8')
+        # print 'table', len(table), table
+        rows = table_rows
+        # print 'rows', rows
+        row_tuples = [r.find_all(['th','td']) for r in rows]
+        n_tuples = len(row_tuples)
+        # print n_tuples,'row_tuples', row_tuples
         data = []
-        for row in table_rows[2:]:
-            new_tuple = row.get_text().strip().split('\n')
-            if new_tuple[0] =='Site':
-                new_tuple.pop()
-            # new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
-            data.append(new_tuple)
+        for row in row_tuples[2:]:
+            for i in range(len(row)):
+                row[i] = row[i].get_text().strip().encode('utf-8')
+            if row[0] =='Site':
+                row[1] = row[1].split('\n')[0]
+            elif row[0] in ['Crew', 'Passengers', 'Survivors',
+                                  'Fatalities', 'Total survivors',
+                                  'Total fatalities']:
+                print '\tSPECIAL', row[0], row
+                row[1] = re.sub(r'(\[\d+\])','', row[1])
+                # print  row[0], row
+                pattern = re.compile('(\D*)(\d*)')
+                number_string = row[1]
+                anymatches = re.match(pattern, number_string)
+                # print 'anymatches.groups()', anymatches.groups(), anymatches.groups()[1]
+                if anymatches.groups()[1]:
+                    row[1] = int(anymatches.groups()[1])
+                else:
+                    row[1] = None
+            # print '\nrow', row
+            data.append(row)
+        # for row in table_rows[2:]:
+        #     new_tuple = []
+        #     new_tuple = row.th.get_text().strip().split('\n')
+        #     new_tuple.append(row.td.get_text().strip())
+        #     new_tuple[0] = str(new_tuple[0].encode('utf-8'))
+        #     new_tuple[1] = str(new_tuple[1].encode('utf-8'))
+        #     if new_tuple[0] =='Site':
+        #         new_tuple[1] = new_tuple[1].split('\n')[0]
+        #     elif new_tuple[0] in ['Crew', 'Passengers', 'Survivors',
+        #                           'Fatalities', 'Total survivors',
+        #                           'Total fatalities']:
+        #         print  new_tuple[0], new_tuple
+        #         new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
+        #         print  new_tuple[0], new_tuple
+        #         pattern = re.compile('(\D*)(\d*)')
+        #         number_string = new_tuple[1]
+        #         anymatches = re.match(pattern, number_string)
+        #         print 'anymatches.groups()', anymatches.groups(), anymatches.groups()[1]
+        #         new_tuple[1] = anymatches.groups()[1]
+        #         # first_number = re.match(new_tuple[1], pattern).groups()[0]
+        #         # print 'first_number', first_number
+        #     # new_tuple[1] = re.sub(r'(\[\d+\])','', new_tuple[1])
+        #     print new_tuple
+        #     data.append(new_tuple)
         paired_data = [[element[0], element[1]] for element in data if len(element) > 1]
         flight_dict = {}
         for k, v in paired_data:
@@ -459,8 +505,8 @@ def scrape_link(crash_links):
             crash_link.origin = flight_dict['Flight origin']
         if 'Destination' in flight_dict.keys():
             crash_link.destination = flight_dict['Destination']
-        print crash_link.place, crash_link.fatalities
-        print crash_link.origin, crash_link.destination
+        print 'Place = ', crash_link.place, ',', crash_link.fatalities, ' killed.'
+        # print crash_link.origin, crash_link.destination
 
 def attributes_to_columns(crash_data,
                           CRASH='Crash',
@@ -588,65 +634,6 @@ def columns_to_totals(dataframe):
         newdf[column] = remove_alpha(newdf[column], within)
         newdf[column] = newdf[column].apply(sum_numbers_of_list)
     return newdf
-# def attributes_to_columns(crash_data,
-                          CRASH='Crash',
-                          PLACE='Place', CREW='Crew',
-                          PASSENGERS='Passengers',
-                          FATALITIES='Fatalities',
-                          SURVIVORS='Survivors',
-                          REGISTRATION='Registration',
-                          ORIGIN='Origin',
-                          DESTINATION='Destination',
-                          attributes={}
-                          ):
-    '''
-    Inputs:
-        - a dataframe that includes a column of
-          Crash objects,
-        - a dictionary of attributes to extract from
-          the Crash objects column.
-
-    Uses apply(lamda crash.attribute) to compile
-    additional columns to the dataframe.
-
-    Returns:
-        - a dataframe with the additional
-          row-wise attribute content.
-    '''
-    if not attributes:
-        attributes = {'place': PLACE,
-                      'crew': CREW,
-                      'passengers': PASSENGERS,
-                      'survivors': SURVIVORS,
-                      'fatalities': FATALITIES,
-                      'registration': REGISTRATION,
-                      'origin': ORIGIN,
-                      'destination': DESTINATION
-                      }
-    # for k in attributes:
-    #     # print k, attributes[k]
-    #     crash_data[attributes[k]] = crash_data[CRASH].apply(lambda c: c.k)
-    crash_data[PLACE] = crash_data[CRASH].apply(lambda c: c.place)
-    crash_data[CREW] = crash_data[CRASH].apply(lambda c: c.crew)
-    crash_data[PASSENGERS] = crash_data[CRASH].apply(lambda c: c.passengers)
-    crash_data[SURVIVORS] = crash_data[CRASH].apply(lambda c: c.survivors)
-    crash_data[FATALITIES] = crash_data[CRASH].apply(lambda c: c.fatalities)
-    crash_data[REGISTRATION] = crash_data[CRASH].apply(lambda c: c.registration)
-    crash_data[ORIGIN] = crash_data[CRASH].apply(lambda c: c.origin)
-    crash_data[DESTINATION] = crash_data[CRASH].apply(lambda c: c.destination)
-    print crash_data.columns, crash_data.index
-    return crash_data
-
-
-        # .apply(lambda c: c.link)
-    # crash_link.place = flight_dict['Site']
-    # crash_link.crew = flight_dict['Crew']
-    # crash_link.passengers = flight_dict['Passengers']
-    # crash_link.fatalities = flight_dict['Fatalities']
-    # crash_link.passengers = flight_dict['Survivors']
-    # crash_link.registration = flight_dict['Operator']
-    # crash_link.origin = flight_dict['Flight origin']
-    # crash_link.destination = flight_dict['Destination']
 
 
 if __name__ == '__main__':
@@ -666,6 +653,7 @@ if __name__ == '__main__':
     more_crashes = attributes_to_columns(crashed)
     # Part C.
     # Which were the top 5 most deadly aviation incidents?
+    # Report the number of fatalities and the flight origin for each.
     PLACE='Place'
     CREW='Crew'
     PASSENGERS='Passengers'
@@ -676,17 +664,26 @@ if __name__ == '__main__':
     DESTINATION='Destination'
     unifat = more_crashes[FATALITIES].unique()
     FAT_INT = 'Fatalities_Int'
+    numcrashes = more_crashes.copy()
+    numcrashes = numcrashes.sort_values(by=[FATALITIES], ascending=False)
+    numcrashes.index = range(0, len(crashes))
+    print numcrashes[FATALITIES,ORIGIN][:10]
+    # Part D
+    # Which flight origin has the highest number of aviation
+    # incidents in the last 25 years?
+    by_origin = df.numcrashes.groupby([ORIGIN]).count()
+
     # more_crashes[FAT_INT] = more_crashes[FATALITIES]
     # more_crashes[FAT_INT] = strip_footnote(more_crashes[FAT_INT])
     # more_crashes[[FATALITIES, FAT_INT]].head(20)
-    run testing.py
+    # run testing.py
     more_crashes['Crew_Int'] = more_crashes['Crew']
-    more_crashed  = strip_footnote_whole(more_crashes)
+    # more_crashed  = strip_footnote_whole(more_crashes)
     more_crashes.head(20)
     more_crashed.head(20)
-    more_crashed  = strip_footnote_whole(more_crashes)
+    # more_crashed  = strip_footnote_whole(more_crashes)
     some  = more_crashed[1:680]
-    num_crash = columns_to_totals(some)
+    # num_crash = columns_to_totals(some)
     num_crash.head(10)
 
     numcrash = num_crash.sort_values(by=[FATALITIES], ascending=False)
