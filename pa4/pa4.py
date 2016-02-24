@@ -364,7 +364,7 @@ def make_dataframe(pattern='h3',
         - LINK, from CRASH.link,
         - BRIEF, from CRASH.brief
     '''
-    print 'QUESTION 1: Part A\n Parsing data into dictionary...'
+    print '\nQUESTION 1: Part A\n Parsing data into dictionary...'
     all_headers = index.find_all(pattern)
     crash_dict = parse_crashes_to_dict(all_headers)
     print '\nBuilding dataframe from dictionary...'
@@ -393,15 +393,58 @@ def grab_link_like_person(url, interval=5):
     return html
 
 
-def scrape_link(crash_links):
+def collapse_table(chosen_table):
+    '''
+    Helper for scrape_link:
+    Input: an html table object
+    Returns:
+        - raw_data: a list of raw string tables cells for archive,
+        - data: a list of processed string tables cells
+            to be used in saving contents to Crash attributes.
+    '''
+    table_rows = chosen_table.find_all('tr')
+    row_tuples = [r.find_all(['th','td']) for r in table_rows]
+    data = []
+    raw_data = []
+    # Compile tuples from table rows
+    for row in row_tuples[2:]:
+        for i in range(len(row)):
+            row[i] = row[i].get_text().strip().encode('utf-8')
+        if row[0] =='Site':
+            raw_data.append(row)
+            row[1] = row[1].split('\n')[0]
+            data.append(row)
+        elif row[0] in ['Destination', 'Flight origin',
+                        'Operator', 'Registration']:
+            raw_data.append(row)
+            data.append(row)
+        elif row[0] in ['Crew', 'Passengers', 'Survivors',
+                              'Fatalities', 'Total survivors',
+                              'Total fatalities']:
+            raw_data.append(row)
+            row[1] = re.sub(r'(\[\d+\])','', row[1])
+            pattern = re.compile('(\D*)(\d*)')
+            anymatches = re.match(pattern, row[1])
+            if anymatches.groups()[1]:
+                row[1] = int(anymatches.groups()[1])
+            else:
+                row[1] = np.nan
+            data.append(row)
+        else:
+            pass
+    return raw_data, data
+
+
+def scrape_link(crash_links, verbose=True):
     '''
     Input: a pandas dataframe of Crash objects.
 
     Calls grab_link_like_person on each Crash object's
     link attribute.
 
-    Scrapes the first table of the link into a list of cleaned
-    field-value texts for each row in table.
+    Scrapes the first table of class 'infobox' from
+    the link into a list of cleaned field-value
+    texts for each row in table.
 
     Builds a flight dictionary from the valid field-value list,
     into key:value pairs.
@@ -416,81 +459,31 @@ def scrape_link(crash_links):
         -Flight origin
         -Destination
     '''
-    print 'Part B. Scrape data from links and save to Crash object attributes:\n'
+    print '\nPart B. \nScrape data from links and save to Crash object attributes...\n'
     count = -1
     for crash_link in crash_links:
         count += 1
         # Turn the link into an html file
-        # print count, ":\n",  crash_link.year, crash_link.date, base_url + crash_link.link
         link_html = grab_link_like_person(base_url + crash_link.link)
         crash_html = BeautifulSoup(link_html, 'lxml')
         all_tables = crash_html.find_all('table')
-        # print 'All tables', len(all_tables)
-        tablenum = 0
         chosen_table = None
         right_class = 'infobox'
+        # Select the table of the correct class to scrape
         while not chosen_table:
             for tab in all_tables:
-                tablenum += 1
-                # print 'Table', tablenum, 'Attributes', tab.attrs
                 key = 'class'
                 if key in tab.attrs:
-                    # print 'Has class!', tab[key]
                     if right_class in tab[key]:
-                        # print '\t THIS ONE!'
                         chosen_table = tab
                         break
-            # if 'infobox' in tab
-        table_rows = chosen_table.find_all('tr')
-        # table_rows = crash_html.find('table').find_all('tr')
-        table = chosen_table.get_text().strip().encode('utf-8')
-        # table = crash_html.find('table').get_text().strip().encode('utf-8')
-        # print table
-        rows = table_rows
-        row_tuples = [r.find_all(['th','td']) for r in rows]
-        n_tuples = len(row_tuples)
-        data = []
-        raw_data = []
-        # Compile tuples from table rows
-        for row in row_tuples[2:]:
-            for i in range(len(row)):
-                row[i] = row[i].get_text().strip().encode('utf-8')
-            if row[0] =='Site':
-                raw_data.append(row)
-                row[1] = row[1].split('\n')[0]
-                data.append(row)
-            elif row[0] in ['Destination', 'Flight origin',
-                            'Operator', 'Registration']:
-                raw_data.append(row)
-                data.append(row)
-            elif row[0] in ['Crew', 'Passengers', 'Survivors',
-                                  'Fatalities', 'Total survivors',
-                                  'Total fatalities']:
-                # print '\tSPECIAL', row[0], row
-                raw_data.append(row)
-                row[1] = re.sub(r'(\[\d+\])','', row[1])
-                # print  row[0], row
-                # all = re.compile('()')
-                # if row[1] == ''
-                pattern = re.compile('(\D*)(\d*)')
-                number_string = row[1]
-                anymatches = re.match(pattern, number_string)
-                # print 'anymatches.groups()', anymatches.groups(), anymatches.groups()[1]
-                if anymatches.groups()[1]:
-                    # print '\tSPECIAL', row[0], row
-                    row[1] = int(anymatches.groups()[1])
-                else:
-                    # print '\tSPECIAL', row[0], row
-                    # print 'anymatches.groups()', anymatches.groups()
-                    row[1] = np.nan
-                data.append(row)
-            else:
-                pass
+        # Collect data from table
+        raw_data, data = collapse_table(chosen_table)
         # Save raw data table to crash object
         crash_link.data = raw_data
         paired_data = [[element[0], element[1]] for element in data if len(element) > 1]
+        # Compile data dictionary from data tuples
         flight_dict = {}
-        # Compile data dictionary from table tuples
         for k, v in paired_data:
             dict_list = flight_dict.keys()
             if k in dict_list:
@@ -532,7 +525,12 @@ def scrape_link(crash_links):
             crash_link.origin = flight_dict['Flight origin']
         if 'Destination' in flight_dict.keys():
             crash_link.destination = flight_dict['Destination']
-        print count, ':', crash_link.date,  crash_link.year, crash_link.link, 'Place =', crash_link.place, ',', crash_link.fatalities, 'killed.'
+        if verbose:
+            if verbose == 'light':
+                if count % 10 == 0:
+                    print count, ':', crash_link.date, crash_link.year
+            else:
+                print count, ':', crash_link.date,  crash_link.year, crash_link.link, 'Place =', crash_link.place, ',', crash_link.fatalities, 'killed.'
     print '...all data scraped.'
 
 
@@ -543,7 +541,7 @@ def attributes_to_columns(crash_data, CRASH='Crash', PLACE='Place', CREW='Crew',
                           attributes={}
                           ):
     '''
-    Uses apply(lamda crash_object.get_attribute(name)) to populate
+    Uses apply(lambda crash_object.get_attribute(name)) to populate
     additional columns to the dataframe.
     Inputs:
         - a dataframe that includes a column of
@@ -574,25 +572,11 @@ def attributes_to_columns(crash_data, CRASH='Crash', PLACE='Place', CREW='Crew',
 
 
 if __name__ == '__main__':
-    # QUESTION 1
-    # Part A.
-    crashes = make_dataframe()
+    # Declare constants
     DATE='Date'
     CRASH='Crash'
     LINK='Link'
     BRIEF='Brief'
-    crashes = crashes.sort_values(by=[DATE])
-    crashes.index = range(0, len(crashes))
-    # Part B.
-    scrape_link(crashes[CRASH])
-    # Copy partial dataframe for safety
-    crashed = crashes.copy()
-    more_crashes = attributes_to_columns(crashed)
-    more_crashes.head(10)
-    # Part C.
-    # Which were the top 5 most deadly aviation incidents?
-    # Report the number of fatalities and the flight origin for each.
-    # Declare more constants
     PLACE='Place'
     CREW='Crew'
     PASSENGERS='Passengers'
@@ -602,6 +586,20 @@ if __name__ == '__main__':
     REGISTRATION='Registration'
     ORIGIN='Origin'
     DESTINATION='Destination'
+    # QUESTION 1
+    # Part A.
+    crashes = make_dataframe()
+    crashes = crashes.sort_values(by=[DATE])
+    crashes.index = range(0, len(crashes))
+    # Part B.
+    scrape_link(crashes[CRASH], verbose='light')
+    # Copy partial dataframe for safety
+    crashed = crashes.copy()
+    more_crashes = attributes_to_columns(crashed)
+    more_crashes.head(10)
+    # Part C.
+    # Which were the top 5 most deadly aviation incidents?
+    # Report the number of fatalities and the flight origin for each.
     # Copy full dataframe for safety
     crashed = more_crashes.copy()
     more_crashes = more_crashes.sort_values(by=[FATALITIES], ascending=False)
@@ -612,9 +610,9 @@ if __name__ == '__main__':
     # incidents in the last 25 years?
     today = dt.date.today()
     yearsago25 = dt.date(today.year - 25, today.month, today.day)
-    by_origin = numcrashes[numcrashes[DATE] >= yearsago25].groupby([ORIGIN]).size()
+    by_origin = more_crashes[more_crashes[DATE] >= yearsago25].groupby([ORIGIN]).size()
     print 'Part D. By Origin:\n', by_origin.sort_values(ascending=False)[:1]
     # Part E.
     # Save this Dataframe as JSON and commit to your repo,
     # along with the notebook / python code used to do this assignment.
-    numcrashes.to_json('crash_json')
+    more_crashes.to_json('crash_json')
