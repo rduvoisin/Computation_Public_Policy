@@ -428,7 +428,7 @@ def collapse_table(chosen_table):
             if anymatches.groups()[1]:
                 row[1] = int(anymatches.groups()[1])
             else:
-                if (row[1] == 'all' | row[1] == '(all)'):
+                if (row[1] == 'all' or row[1] == '(all)'):
                     row[1] = np.nan
                 else:
                     row[1] = 0
