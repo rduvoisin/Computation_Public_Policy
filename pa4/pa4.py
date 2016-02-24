@@ -428,7 +428,10 @@ def collapse_table(chosen_table):
             if anymatches.groups()[1]:
                 row[1] = int(anymatches.groups()[1])
             else:
-                row[1] = np.nan
+                if (row[1] == 'all' | row[1] == '(all)'):
+                    row[1] = np.nan
+                else:
+                    row[1] = 0
             data.append(row)
         else:
             pass
@@ -592,7 +595,7 @@ if __name__ == '__main__':
     crashes = crashes.sort_values(by=[DATE])
     crashes.index = range(0, len(crashes))
     # Part B.
-    scrape_link(crashes[CRASH], verbose='light')
+    scrape_link(crashes[CRASH], verbose=False)
     # Copy partial dataframe for safety
     crashed = crashes.copy()
     more_crashes = attributes_to_columns(crashed)
@@ -604,15 +607,21 @@ if __name__ == '__main__':
     crashed = more_crashes.copy()
     more_crashes = more_crashes.sort_values(by=[FATALITIES], ascending=False)
     more_crashes.index = range(0, len(crashes))
-    print 'Part C. By Most Fatalities:\n', more_crashes[[FATALITIES,ORIGIN]][:5]
+    print 'Part C. By Most Fatalities:\n', \
+        more_crashes[[FATALITIES,ORIGIN, DATE]][:5]
     # Part D
     # Which flight origin has the highest number of aviation
     # incidents in the last 25 years?
     today = dt.date.today()
     yearsago25 = dt.date(today.year - 25, today.month, today.day)
-    by_origin = more_crashes[more_crashes[DATE] >= yearsago25].groupby([ORIGIN]).size()
+    last_25years = more_crashes[more_crashes[DATE] >= yearsago25]
+    by_origin = last_25years.groupby([ORIGIN]).size()
+    last_25years['Origin2'] = last_25years[ORIGIN].fillna(value=np.nan)
+    last_25years['Origin4'] = last_25years['Origin2'].apply(lambda c: ''.join(str(e) for e in str(c)))
+    last_25years['Origin4'] = last_25years['Origin4'].replace(to_replace='nan', value=np.nan)
+    by_origin = last_25years.groupby(['Origin4']).size()
     print 'Part D. By Origin:\n', by_origin.sort_values(ascending=False)[:1]
     # Part E.
     # Save this Dataframe as JSON and commit to your repo,
     # along with the notebook / python code used to do this assignment.
-    more_crashes.to_json('crash_json')
+    myjson = more_crashes.to_json('crash_json')
