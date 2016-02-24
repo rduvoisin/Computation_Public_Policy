@@ -71,6 +71,10 @@ class Crash(object):
         '''Accident Date (Month and Day).'''
         return self._date
 
+    @date.setter
+    def date(self, newdate):
+        self._date = newdate
+
     @property
     def brief(self):
         '''Brief description of the accident.'''
@@ -224,7 +228,6 @@ def parse_crashes_to_dict(all_header3):
         this_header.next_sibling.next_sibling
         is_911 = False
         if not this_header.span:
-            print "\nOp! All Done!"
             return header_lists_year_dics
         year = int(this_header.span.get('id'))
         is_ul = this_header
@@ -345,6 +348,42 @@ def dict_todataframe(crash_dict):
     return pd.DataFrame({'Date':dates, 'Crash': events})
 
 
+def fix_date_lists(row):
+    '''
+    Edits the date of the Crash objects
+    according to the 'Date' column.
+    '''
+    row[CRASH].date = row[DATE]
+
+
+def fix_base_link(row):
+    '''Return a LINK column with full address'''
+    newlink = base_url + row[LINK]
+    row[LINK] = newlink
+    return row[LINK]
+
+
+def fix_unicode_lists(row, COLUMN, INDEX='Index_Copy'):
+    '''Replaces all lists in COLUMN with a single value'''
+    if isinstance(row[COLUMN], list):
+        if row[COLUMN]:
+            print '_N = {} ({}):'.format(row[INDEX], row[DATE]), COLUMN, \
+                  '{} items:'.format(len(row[COLUMN])), row[COLUMN]
+            if row[INDEX] % 2 == 0:
+                selected_item = re.sub(r'(\[\d+\])', '', row[COLUMN][0])
+            else:
+                selected_item = re.sub(r'(\[\d+\])', '', row[COLUMN][-1])
+        else:
+            selected_item = np.nan
+        row[COLUMN] = selected_item
+        print "\t>>", row[COLUMN]
+        return row[COLUMN]
+    else:
+        row[COLUMN] = row[COLUMN]
+        print "\t>>", row[COLUMN]
+        return row[COLUMN]
+
+
 def make_dataframe(pattern='h3',
                    DATE='Date', CRASH='Crash',
                    LINK='Link', BRIEF='Brief'):
@@ -372,14 +411,15 @@ def make_dataframe(pattern='h3',
     crashes[DATE] = pd.to_datetime(crashes[DATE])
     crashes[LINK] = crashes[CRASH].apply(lambda c: c.link)
     crashes[BRIEF] = crashes[CRASH].apply(lambda c: c.brief)
+    crashes.apply(fix_date_lists, axis=1)
     print '\nDataframe built:\n Shape:', \
             crashes.shape, '\n Columns:', \
-            crashes.columns, '\n Head 50:\n', \
-            crashes.head(50)
+            crashes.columns, '\n Head 10:\n', \
+            crashes.head(10)
     return crashes
 
 
-def grab_link_like_person(url, interval=5):
+def grab_link_like_person(url, interval=4):
     '''
     Clicks a url address and sets of timer
     to ensure a specified rate limit for url requests
@@ -416,6 +456,7 @@ def collapse_table(chosen_table):
             data.append(row)
         elif row[0] in ['Destination', 'Flight origin',
                         'Operator', 'Registration']:
+            row[1] = re.sub(r'(\[\d+\])','', row[1])
             raw_data.append(row)
             data.append(row)
         elif row[0] in ['Crew', 'Passengers', 'Survivors',
@@ -540,7 +581,7 @@ def scrape_link(crash_links, verbose=True):
 def attributes_to_columns(crash_data, CRASH='Crash', PLACE='Place', CREW='Crew',
                           PASSENGERS='Passengers', FATALITIES='Fatalities',
                           SURVIVORS='Survivors', REGISTRATION='Registration',
-                          ORIGIN='Origin', DESTINATION='Destination',
+                          ORIGIN='Origin', DESTINATION='Destination', DATA ='Raw_Data',
                           attributes={}
                           ):
     '''
@@ -563,7 +604,8 @@ def attributes_to_columns(crash_data, CRASH='Crash', PLACE='Place', CREW='Crew',
                       'fatalities': FATALITIES,
                       'registration': REGISTRATION,
                       'origin': ORIGIN,
-                      'destination': DESTINATION
+                      'destination': DESTINATION,
+                      'data': DATA
                       }
     for k in attributes:
         crash_data[attributes[k]] = \
@@ -589,39 +631,53 @@ if __name__ == '__main__':
     REGISTRATION='Registration'
     ORIGIN='Origin'
     DESTINATION='Destination'
+    DATA ='Raw_Data'
+    INDEX = 'Index_Copy'
     # QUESTION 1
     # Part A.
     crashes = make_dataframe()
     crashes = crashes.sort_values(by=[DATE])
     crashes.index = range(0, len(crashes))
+    crashes[INDEX] = crashes.index.tolist()
     # Part B.
-    scrape_link(crashes[CRASH], verbose=False)
+    scrape_link(crashes[CRASH], verbose='light')
     # Copy partial dataframe for safety
     crashed = crashes.copy()
-    more_crashes = attributes_to_columns(crashed)
-    more_crashes.head(10)
+    crashes = attributes_to_columns(crashes)
+    # Copy full dataframe for safety
+    crashed = crashes.copy()
+    # Apply formating fixes to new data
+    crashes = crashes.fillna(value=np.nan)
+    crashes[LINK] = crashes.apply(fix_base_link, axis=1)
+    for COLUMN in ['Destination', 'Origin', 'Registration', 'Brief']:
+        crashes[COLUMN] = crashes.apply(lambda row: fix_unicode_lists(row, COLUMN), axis=1)
+    crashes.head(10)
     # Part C.
     # Which were the top 5 most deadly aviation incidents?
     # Report the number of fatalities and the flight origin for each.
     # Copy full dataframe for safety
-    crashed = more_crashes.copy()
-    more_crashes = more_crashes.sort_values(by=[FATALITIES], ascending=False)
-    more_crashes.index = range(0, len(crashes))
+    crashed = crashes.copy()
+    crashed[INDEX] = crashed.index.tolist()
+    crashes = crashes.sort_values(by=[FATALITIES], ascending=False)
+    crashes.index = range(0, len(crashes))
+    crashes[INDEX] = crashes.index.tolist()
     print 'Part C. By Most Fatalities:\n', \
-        more_crashes[[FATALITIES,ORIGIN, DATE]][:5]
+        crashes[[FATALITIES,ORIGIN, DATE]][:5]
+    # Save dataframe to csv for safety
+    # mycsv = crashed.to_csv('crash_csv', encoding='utf-8')
+    mcsvnan = crashes.to_csv('crash_nan_csv', encoding='utf-8')
     # Part D
     # Which flight origin has the highest number of aviation
     # incidents in the last 25 years?
     today = dt.date.today()
     yearsago25 = dt.date(today.year - 25, today.month, today.day)
-    last_25years = more_crashes[more_crashes[DATE] >= yearsago25]
-    by_origin = last_25years.groupby([ORIGIN]).size()
-    last_25years['Origin2'] = last_25years[ORIGIN].fillna(value=np.nan)
-    last_25years['Origin4'] = last_25years['Origin2'].apply(lambda c: ''.join(str(e) for e in str(c)))
-    last_25years['Origin4'] = last_25years['Origin4'].replace(to_replace='nan', value=np.nan)
-    by_origin = last_25years.groupby(['Origin4']).size()
-    print 'Part D. By Origin:\n', by_origin.sort_values(ascending=False)[:1]
+    last_25years = crashes[crashes[DATE] >= yearsago25]
+    by_origin = last_25years.groupby([ORIGIN]).size().sort_values(ascending=False)
+    print 'Part D. By Origin:\n', by_origin[:1]
     # Part E.
     # Save this Dataframe as JSON and commit to your repo,
     # along with the notebook / python code used to do this assignment.
-    myjson = more_crashes.to_json('crash_json')
+    # myjson = crashed_fix.to_json('crash_json', orient='index') DOESNT WORK.
+    # In [185]: myjson = crashed_fix.to_json('crash_json', orient='index')
+    # Segmentation fault
+    # studentuser@data-science-rocks:~/ppha_30530/pa4$
