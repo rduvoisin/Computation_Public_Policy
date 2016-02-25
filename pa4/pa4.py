@@ -663,7 +663,7 @@ if __name__ == '__main__':
     crashes = crashes.sort_values(by=[FATALITIES], ascending=False)
     crashes.index = range(0, len(crashes))
     crashes[INDEX] = crashes.index.tolist()
-    print 'Part C. Sort By Most Fatalities:\n', \
+    print '\nPart C. Sort By Most Fatalities:\n', \
         crashes[[FATALITIES,ORIGIN, DATE]][:5]
     # Save dataframe to csv for safety
     # mycsv = crashed.to_csv('crash_csv', encoding='utf-8')
@@ -675,7 +675,7 @@ if __name__ == '__main__':
     yearsago25 = dt.date(today.year - 25, today.month, today.day)
     last_25years = crashes[crashes[DATE] >= yearsago25]
     by_origin = last_25years.groupby([ORIGIN]).size().sort_values(ascending=False)
-    print 'Part D. Total Incidents By Origin:\n', by_origin[:5]
+    print '\nPart D. Total Incidents By Origin:\n', by_origin[:5]
     print '\nFLIGHT ORIGIN WITH THE MOST INCIDENTS:\n', by_origin[:1], '\n\nINCLUDES:\n'
     deadliest_origin = crashes[crashes[ORIGIN]=='Ninoy Aquino International Airport'][INDEX]
     deadliest_origin = deadliest_origin.tolist()
