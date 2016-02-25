@@ -208,6 +208,8 @@ class Crash(object):
             return self._origin
         elif string_name == 'destination':
             return self._destination
+        elif string_name == 'data':
+            return self._data
         else:
             print 'Enter valid attribute name!'
 
@@ -373,14 +375,13 @@ def fix_unicode_lists(row, COLUMN, INDEX='Index_Copy'):
                 selected_item = re.sub(r'(\[\d+\])', '', row[COLUMN][0])
             else:
                 selected_item = re.sub(r'(\[\d+\])', '', row[COLUMN][-1])
+            print "\t>>", selected_item
         else:
             selected_item = np.nan
         row[COLUMN] = selected_item
-        print "\t>>", row[COLUMN]
         return row[COLUMN]
     else:
         row[COLUMN] = row[COLUMN]
-        print "\t>>", row[COLUMN]
         return row[COLUMN]
 
 
@@ -611,7 +612,8 @@ def attributes_to_columns(crash_data, CRASH='Crash', PLACE='Place', CREW='Crew',
         crash_data[attributes[k]] = \
         crash_data[CRASH].apply(lambda c: c.get_attribute(k))
     print '\nPopulated attributes to additional columns:\n', \
-        crash_data.columns, crash_data.describe()
+        crash_data.columns
+    print crash_data.describe()
     print '\nFinished Part B.\n'
     return crash_data
 
@@ -661,7 +663,7 @@ if __name__ == '__main__':
     crashes = crashes.sort_values(by=[FATALITIES], ascending=False)
     crashes.index = range(0, len(crashes))
     crashes[INDEX] = crashes.index.tolist()
-    print 'Part C. By Most Fatalities:\n', \
+    print 'Part C. Sort By Most Fatalities:\n', \
         crashes[[FATALITIES,ORIGIN, DATE]][:5]
     # Save dataframe to csv for safety
     # mycsv = crashed.to_csv('crash_csv', encoding='utf-8')
@@ -673,11 +675,24 @@ if __name__ == '__main__':
     yearsago25 = dt.date(today.year - 25, today.month, today.day)
     last_25years = crashes[crashes[DATE] >= yearsago25]
     by_origin = last_25years.groupby([ORIGIN]).size().sort_values(ascending=False)
-    print 'Part D. By Origin:\n', by_origin[:1]
+    print 'Part D. Total Incidents By Origin:\n', by_origin[:5]
+    print '\nFLIGHT ORIGIN WITH THE MOST INCIDENTS:\n', by_origin[:1], '\n\nINCLUDES:\n'
+    deadliest_origin = crashes[crashes[ORIGIN]=='Ninoy Aquino International Airport'][INDEX]
+    deadliest_origin = deadliest_origin.tolist()
+    deadliest_origin
+    print len(deadliest_origin), 'incidents:'
+    for i in range(len(deadliest_origin)):
+        print '\n{}.'.format(i + 1), crashes[DATE][deadliest_origin[i]], \
+                '\nDeparted from', crashes[ORIGIN][deadliest_origin[i]], \
+                'towards', crashes[DESTINATION][deadliest_origin[i]], \
+                '\nCrash occured in', crashes[PLACE][deadliest_origin[i]], \
+                '\nDescribed as:\n\t', crashes[BRIEF][deadliest_origin[i]]
     # Part E.
     # Save this Dataframe as JSON and commit to your repo,
     # along with the notebook / python code used to do this assignment.
     # myjson = crashed_fix.to_json('crash_json', orient='index') DOESNT WORK.
+    mcsvnan = crashes.to_csv('crash_nan_csv', encoding='utf-8')
+    # crjsn = crashes.to_json('crash_nan_json', orient='records')
     # In [185]: myjson = crashed_fix.to_json('crash_json', orient='index')
     # Segmentation fault
     # studentuser@data-science-rocks:~/ppha_30530/pa4$
