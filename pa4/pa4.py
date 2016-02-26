@@ -259,19 +259,19 @@ def parse_crashes_to_dict(all_header3):
                     if not subbullet_li.next_element.name:
                         header_date.append(sub_date)
                         if has_same_date:
-                            header_brief = subbullet_li.contents[-1]
+                            header_brief = subbullet_li.contents[-1].encode('ascii', 'ignore')
                         else:
-                            sub_text = sub_dater.group(2).strip()
-                            header_brief.append(re.search('(\w+)(.*)', sub_text).group(0))
+                            sub_text = sub_dater.group(2).strip().encode('ascii', 'ignore')
+                            header_brief.append(re.search('(\w+)(.*)', sub_text).group(0).encode('ascii', 'ignore'))
                     else:
-                        header_brief = subbullet_li.contents[-1]
+                        header_brief = subbullet_li.contents[-1].encode('ascii', 'ignore')
                         new_bullet_from_li(subbullet_li, header_lists_year_dics, year, sub_date, header_brief)
             else:
                 strip_date = header_li.next_element[:-2].strip()
                 header_dater = re.match('(^\w+ \w+)(.*)', strip_date)
                 header_date = header_dater.group(1)
                 header_text = header_li.get_text()
-                header_brief = re.sub(strip_date, '', header_text, 1).strip()
+                header_brief = re.sub(strip_date, '', header_text, 1).strip().encode('ascii', 'ignore')
             if not is_911:
                 new_bullet_from_li(header_li, header_lists_year_dics, year, header_date, header_brief)
     return header_lists_year_dics
@@ -691,8 +691,9 @@ if __name__ == '__main__':
     # Save this Dataframe as JSON and commit to your repo,
     # along with the notebook / python code used to do this assignment.
     # myjson = crashed_fix.to_json('crash_json', orient='index') DOESNT WORK.
-    mcsvnan = crashes.to_csv('crash_nan_csv', encoding='utf-8')
-    # crjsn = crashes.to_json('crash_nan_json', orient='records')
-    # In [185]: myjson = crashed_fix.to_json('crash_json', orient='index')
-    # Segmentation fault
-    # studentuser@data-science-rocks:~/ppha_30530/pa4$
+        # In [185]: myjson = crashed_fix.to_json('crash_json', orient='index')
+        # Segmentation fault
+        # studentuser@data-science-rocks:~/ppha_30530/pa4$
+    string_crashes = crashes.copy()
+    string_crashes.describe()
+    myjson = string_crashes.to_json('crash_renew_json') # Friday submission
