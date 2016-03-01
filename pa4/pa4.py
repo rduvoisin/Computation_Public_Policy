@@ -665,6 +665,14 @@ if __name__ == '__main__':
     crashes[INDEX] = crashes.index.tolist()
     print '\nPart C. Sort By Most Fatalities:\n', \
         crashes[[FATALITIES,ORIGIN, DATE]][:5]
+    print '\nFLIGHT ORIGIN WITH THE MOST FATALITIES:\n', crashes[ORIGIN][0], '({})'.format(crashes[FATALITIES][0]), \
+      'REGISTERED AS:',crashes[REGISTRATION][0], '\n\nSUMMARY:\n'
+    for i in range(len(crashes[[FATALITIES,ORIGIN, DATE]][:5])):
+        print '\n{}.'.format(i + 1), crashes[DATE][i], \
+                '\nDeparted from', crashes[ORIGIN][i], \
+                'towards', crashes[DESTINATION][i], \
+                '\nCrash occured in', crashes[PLACE][i], \
+                '\nDescribed as:\n\t', crashes[BRIEF][i]
     # Save dataframe to csv for safety
     # mycsv = crashed.to_csv('crash_csv', encoding='ascii', 'ignore')
     mcsvnan = crashes.to_csv('crash_nan_csv', encoding='ascii')
