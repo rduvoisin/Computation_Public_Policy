@@ -450,7 +450,7 @@ def collapse_table(chosen_table):
     # Compile tuples from table rows
     for row in row_tuples[2:]:
         for i in range(len(row)):
-            row[i] = row[i].get_text().strip().encode('utf-8')
+            row[i] = row[i].get_text().strip().encode('ascii', 'ignore')
         if row[0] =='Site':
             raw_data.append(row)
             row[1] = row[1].split('\n')[0]
@@ -666,8 +666,8 @@ if __name__ == '__main__':
     print '\nPart C. Sort By Most Fatalities:\n', \
         crashes[[FATALITIES,ORIGIN, DATE]][:5]
     # Save dataframe to csv for safety
-    # mycsv = crashed.to_csv('crash_csv', encoding='utf-8')
-    mcsvnan = crashes.to_csv('crash_nan_csv', encoding='utf-8')
+    # mycsv = crashed.to_csv('crash_csv', encoding='ascii', 'ignore')
+    mcsvnan = crashes.to_csv('crash_nan_csv', encoding='ascii')
     # Part D
     # Which flight origin has the highest number of aviation
     # incidents in the last 25 years?
