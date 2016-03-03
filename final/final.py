@@ -20,6 +20,8 @@ import json
 import mechanize as mc
 import cookielib
 
+# def get_levelsof_imp_exp_pairs();
+
 # Browser
 br = mc.Browser()
 
@@ -299,56 +301,55 @@ top_exporters = byexporter.size().sort_values(ascending=False)
 top_exporter['Total Exports (2010-)'] = top_exporters
 print top_exporter.columns
 print top_exporter[:5]
-
-
-# In[425]:
-
-conf_gexport
-
-
-# In[419]:
-
-conf_gimport
-
-
-# In[420]:
-
-# TRY MANUAL COPY
-# Get img src of the button of corresponding id and type
-# print response.geturl()
-all_inputs = index.find_all('a', href=True)
-# copied_link = "/cites_trade/exports/download?filters[time_range_start]=2015&amp;filters[time_range_end]=2015&amp;filters[exporters_ids][]=all_exp&amp;filters[importers_ids][]=all_imp&amp;filters[sources_ids][]=all_sou&amp;filters[purposes_ids][]=all_pur&amp;filters[terms_ids][]=all_ter&amp;filters[selection_taxon]=taxon&amp;filters[taxon_concepts_ids][]=&amp;filters[reset]=&amp;web_disabled=&amp;filters[report_type]=comptab&amp;filters[csv_separator]=comma"
-print '\nA Tags:', len(all_inputs)
-tag_number = 0
-for i in all_inputs:
-    print '\nTAG', tag_number,':',  i.attrs
-    if 'id' in i.attrs:
-        if i.attrs['id'] == 'download_genie':
-            link = i.get('href')
-            print 'MATCH',  i.attrs['id'], link
-            print i
-            break
-#     links = i.find('a')
-#     image_src = image.get('src')
-#     if 'id' in button.attrs:
-#         print button.attrs['id'] == button_id
-#         if button.attrs['id'] == button_id:
-#             download_button_src = image_src
+#
+# # In[425]:
+#
+# conf_gexport
+#
+#
+# # In[419]:
+#
+# conf_gimport
+#
+#
+# # In[420]:
+#
+# # TRY MANUAL COPY
+# # Get img src of the button of corresponding id and type
+# # print response.geturl()
+# all_inputs = index.find_all('a', href=True)
+# # copied_link = "/cites_trade/exports/download?filters[time_range_start]=2015&amp;filters[time_range_end]=2015&amp;filters[exporters_ids][]=all_exp&amp;filters[importers_ids][]=all_imp&amp;filters[sources_ids][]=all_sou&amp;filters[purposes_ids][]=all_pur&amp;filters[terms_ids][]=all_ter&amp;filters[selection_taxon]=taxon&amp;filters[taxon_concepts_ids][]=&amp;filters[reset]=&amp;web_disabled=&amp;filters[report_type]=comptab&amp;filters[csv_separator]=comma"
+# print '\nA Tags:', len(all_inputs)
+# tag_number = 0
+# for i in all_inputs:
+#     print '\nTAG', tag_number,':',  i.attrs
+#     if 'id' in i.attrs:
+#         if i.attrs['id'] == 'download_genie':
+#             link = i.get('href')
+#             print 'MATCH',  i.attrs['id'], link
+#             print i
 #             break
-#     print 'SRC', download_button_src
-#     try:
-#         print '\tIMAGE', image
-#         print '\tIMAGE SOURCE:', image_src
-#     except:
-#         pass
-#     button_number += 1
-# print '\nIMAGE SRC FILE CHOSEN:', download_button_src
-# print base_url, index_ref,
-
-
-# In[525]:
-
-conf_comp.head(50)
-
-
-# In[ ]:
+# #     links = i.find('a')
+# #     image_src = image.get('src')
+# #     if 'id' in button.attrs:
+# #         print button.attrs['id'] == button_id
+# #         if button.attrs['id'] == button_id:
+# #             download_button_src = image_src
+# #             break
+# #     print 'SRC', download_button_src
+# #     try:
+# #         print '\tIMAGE', image
+# #         print '\tIMAGE SOURCE:', image_src
+# #     except:
+# #         pass
+# #     button_number += 1
+# # print '\nIMAGE SRC FILE CHOSEN:', download_button_src
+# # print base_url, index_ref,
+#
+#
+# # In[525]:
+#
+# conf_comp.head(50)
+#
+#
+# # In[ ]:
