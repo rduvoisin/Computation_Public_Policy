@@ -1,3 +1,2 @@
 # ppha_30530
-Code for Jennifer, Eric, Bill.
-This a public repository until the student pack kicks in.
+Computation for Public Policy (PPHA 30530) Code for Jennifer Helsby, Eric, Bill.
