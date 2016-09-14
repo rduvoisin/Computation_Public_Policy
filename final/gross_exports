@@ -1,0 +1,22 @@
+,App.,Taxon,Term,Unit,Country,2015
+0,I,Amazona auropalliata,live,,NL,1.0
+1,I,Equus hemionus,specimens,,MN,120.0
+2,I,Equus przewalskii,live,,CZ,4.0
+3,I,Equus przewalskii,specimens,,MN,20.0
+4,I,Pan troglodytes,specimens,,SL,123.0
+5,I,Uncia uncia,specimens,,MN,200.0
+6,II,Alligator mississippiensis,leather products (small),,MN,34.0
+7,II,Aquila chrysaetos,feathers,kg,MN,25.0
+8,II,Caiman crocodilus,leather products (small),,MN,14.0
+9,II,Canis lupus,skins,,MN,89.0
+10,II,Canis lupus,specimens,,MN,2.0
+11,II,Canis lupus,trophies,,MN,5.0
+12,II,Falco cherrug,specimens,,MN,12300.0
+13,II,Ovis ammon,specimens,,MN,129.0
+14,II,Ovis ammon,trophies,,MN,45.0
+15,II,Panthera leo,live,,ZA,3.0
+16,II,Python bivittatus,leather products (small),,MN,1.0
+17,II,Testudo graeca,live,,LY,5.0
+18,III,Capra sibirica,specimens,,MN,30.0
+19,III,Capra sibirica,trophies,,MN,43.0
+20,III,Cedrela odorata,sawn wood,m3,CI,1418.005
