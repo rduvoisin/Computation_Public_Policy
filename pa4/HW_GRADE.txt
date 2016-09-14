@@ -1,9 +1,0 @@
--10 on part d: I believe because you didn’t quite clean up the origins enough 
-so it threw the results off. Otherwise great work! Your approach is very good from an OOP 
-and raw programming standpoint, so even though you didn't make as much use of the built-in
-tools (which would honestly make things a lot easier) you should will probably do very well
-understanding things future classes or projects may throw at you.
-
-+20 for part A.
-
-Overall 110/100

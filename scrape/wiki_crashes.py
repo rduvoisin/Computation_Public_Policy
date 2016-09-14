@@ -1,5 +1,4 @@
 # Rebeccah Duvoisin
-# Assignment 4
 from __future__ import  division
 import os
 import sys
@@ -12,10 +11,11 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 import json
+import random
 base_url = "https://en.wikipedia.org"
 index_ref  = "/wiki/List_of_accidents_and_incidents_involving_commercial_aircraft"
 index_html = urlopen(base_url + index_ref)
-# Parsed version of html - that is what a BeautifulSoup object is.
+# Parsed html 
 index = BeautifulSoup(index_html, 'lxml')
 
 class Crash(object):
@@ -429,8 +429,8 @@ def grab_link_like_person(url, interval=4):
     Returns an opened url page to scrape  content.
     '''
     html = urlopen(url)
-    # source_code = requests.get(url)
-    time.sleep(interval)
+    time_lapse = random.randint(0, interval)
+    time.sleep(time_lapse)
     return html
 
 
@@ -635,13 +635,12 @@ if __name__ == '__main__':
     DESTINATION='Destination'
     DATA ='Raw_Data'
     INDEX = 'Index_Copy'
-    # QUESTION 1
-    # Part A.
+    # Build smart dataframe
     crashes = make_dataframe()
     crashes = crashes.sort_values(by=[DATE])
     crashes.index = range(0, len(crashes))
     crashes[INDEX] = crashes.index.tolist()
-    # Part B.
+    # Scrape links
     scrape_link(crashes[CRASH], verbose='light')
     # Copy partial dataframe for safety
     crashed = crashes.copy()
@@ -654,7 +653,6 @@ if __name__ == '__main__':
     for COLUMN in ['Destination', 'Origin', 'Registration', 'Brief']:
         crashes[COLUMN] = crashes.apply(lambda row: fix_unicode_lists(row, COLUMN), axis=1)
     crashes.head(10)
-    # Part C.
     # Which were the top 5 most deadly aviation incidents?
     # Report the number of fatalities and the flight origin for each.
     # Copy full dataframe for safety
@@ -663,7 +661,7 @@ if __name__ == '__main__':
     crashes = crashes.sort_values(by=[FATALITIES], ascending=False)
     crashes.index = range(0, len(crashes))
     crashes[INDEX] = crashes.index.tolist()
-    print '\nPart C. Sort By Most Fatalities:\n', \
+    print '\nSort By Most Fatalities:\n', \
         crashes[[FATALITIES,ORIGIN, DATE]][:5]
     print '\nFLIGHT ORIGIN WITH THE MOST FATALITIES:\n', crashes[ORIGIN][0], '({})'.format(crashes[FATALITIES][0]), \
       'REGISTERED AS:',crashes[REGISTRATION][0], '\n\nSUMMARY:\n'
@@ -676,14 +674,13 @@ if __name__ == '__main__':
     # Save dataframe to csv for safety
     # mycsv = crashed.to_csv('crash_csv', encoding='ascii', 'ignore')
     mcsvnan = crashes.to_csv('crash_nan_csv', encoding='ascii')
-    # Part D
     # Which flight origin has the highest number of aviation
     # incidents in the last 25 years?
     today = dt.date.today()
     yearsago25 = dt.date(today.year - 25, today.month, today.day)
     last_25years = crashes[crashes[DATE] >= yearsago25]
     by_origin = last_25years.groupby([ORIGIN]).size().sort_values(ascending=False)
-    print '\nPart D. Total Incidents By Origin:\n', by_origin[:5]
+    print '\nTotal Incidents By Origin:\n', by_origin[:5]
     print '\nFLIGHT ORIGIN WITH THE MOST INCIDENTS:\n', by_origin[:1], '\n\nINCLUDES:\n'
     deadliest_origin = crashes[crashes[ORIGIN]=='Ninoy Aquino International Airport'][INDEX]
     deadliest_origin = deadliest_origin.tolist()
@@ -695,13 +692,9 @@ if __name__ == '__main__':
                 'towards', crashes[DESTINATION][deadliest_origin[i]], \
                 '\nCrash occured in', crashes[PLACE][deadliest_origin[i]], \
                 '\nDescribed as:\n\t', crashes[BRIEF][deadliest_origin[i]]
-    # Part E.
-    # Save this Dataframe as JSON and commit to your repo,
-    # along with the notebook / python code used to do this assignment.
-    # myjson = crashed_fix.to_json('crash_json', orient='index') DOESNT WORK.
-        # In [185]: myjson = crashed_fix.to_json('crash_json', orient='index')
-        # Segmentation fault
-        # studentuser@data-science-rocks:~/ppha_30530/pa4$
+    # Save this Dataframe as JSON and commit 
+    # myjson = crashed_fix.to_json('crash_json', orient='index') 
+      
     string_crashes = crashes.copy()
     string_crashes.describe()
     myjson = string_crashes.to_json('crash_renew_json') # Friday submission
