@@ -1,17 +1,8 @@
 # Rebeccah Duvoisin
-# Computation for Public Policy: Assignment 2
-#
-#     Assigned: Friday, January 22, 2016
-#     Due: By beginning of class Tuesday, February 2, 2016
-#     Submit via GitHub
-#
-# Introduction
-#
-# In this assignment we will further explore the Chicago crime data.
+# We will further explore the Chicago crime data.
 # This time we will look at a larger portion of the data and augment
 # our analysis by including data about socioeconomics, population, and police stations.
-#
-# To get credit for your answer, you must show in full the code that produced the answer.
+
 from __future__ import division
 import os
 import sys
@@ -427,8 +418,7 @@ cname = "COMMUNITY AREA NAME"
 day = 'Day'
 
 if __name__=='__main__':
-    # Question 1: Crime counts and socioeconomics
-    #
+   
     # Download the crime data for all of the year 2015. Also download the socioeconomic data.
 
     filenames = ['2015_crimes.csv',
@@ -438,10 +428,8 @@ if __name__=='__main__':
 
     chi = CityData(filenames, crime_data, ses_data)
     chi.MakeCommunities(True)
-
-    # (a) Calculate the number of crimes in each Community Area in 2015.
-    # (b) Sort the Community Areas by 2015 crime count.
-    # Which Community Area (by name) has the highest crime count. The lowest?
+    
+    #  Community Areas (by name) with the highest/lowest crime count. 
     cnames = chi.crimeses[cname].unique().tolist()
     community_crime_count = chi.crimeses.groupby(cname)['ID'].agg('count').copy()
     community_crime_count = pd.DataFrame({'Crime Count' :community_crime_count})
@@ -452,8 +440,6 @@ if __name__=='__main__':
                 community_crime_count.index[76], community_crime_count['Crime Count'][76])
 
 
-
-    # Plot Question 1. b)
     plt.close('all')
     fig, ax = plt.subplots(figsize=(10,12))
     doc = 'crime_count_bycommunity.png'
@@ -482,9 +468,7 @@ if __name__=='__main__':
     plt.gcf().tight_layout()
     fig.savefig(doc)
 
-    # (c) Create a table whose rows are days in the year and columns are the
-    # 77 Community Area crime counts. Select a few Communities
-    # that you are interested and plot time series.
+    # Community area crime timeseries
     s = pd.Series(chi.crimeses['Date'])
     d = s[:258478].map(lambda x: x.strftime('%Y-%m-%d'))
 
@@ -501,7 +485,7 @@ if __name__=='__main__':
     table = pd.pivot_table(daily_table, columns=cname, index=['Day'], aggfunc='count')
     print table.to_string(na_rep ='')
 
-    # Plot Daily Counts on select communities
+    # Daily Counts on select communities
     community_crime_dailycount = chi.crimeses.groupby([cname, 'Day'])
     community_crime_dailycount = community_crime_dailycount['ID'].agg('count')
     community_crime_dailyunstack = community_crime_dailycount.unstack(cname)
@@ -578,9 +562,7 @@ if __name__=='__main__':
     plt.gcf().tight_layout()
     fig.savefig(doc)
 
-    # (d) By joining with the socioeconomic data,
-    # create a scatter plot of crime counts against per capita income.
-    # Summarize the relationship in words.
+    # Together with socioeconomic data, look out crime counts against per capita income.
     community_area_count= chi.crimeses.groupby(cname)['ID'].agg('count').copy()
     community_area_crime = pd.DataFrame({'Crime Count': community_area_count})
     community_area_crime.sort_values('Crime Count', ascending=False, inplace=True)
@@ -612,14 +594,11 @@ if __name__=='__main__':
     fig.savefig(doc)
 
 
-    # Question 2: Community Area populations
-    #
     # Download the census block population data and the Community Area tracts mapping.
     #
-    # (a) Join these together using the fact that the last six digits of the tract
-    # id in the mapping data correspond to the first six digits of the block id.
-    # However, the data portal has a bug:
-    # if the block starts with a zero, that digit is missing!
+    # The last six digits of the tract id in the mapping data 
+    # correspond to the first six digits of the block id.
+    # blocks starting with a zero have a digit is missing.
 
     cblock = 'CENSUS BLOCK'
     tract = 'tract_id'
@@ -651,7 +630,7 @@ if __name__=='__main__':
     # Google this:
     missing_populations = {'Edison Park' : 11187, 'Edgewater' : 56521, 'West Ridge' : 71942}
 
-    # (b) Calculate the total population in each Community Area.
+    # Totalling populations in each Community Area.
     geo_sum = geo.groupby(cname)[block_pop].aggregate('sum')
     geo_sum= pd.DataFrame({'community_pop': geo_sum, cname: geo_sum.index})
     for com in missing_communities:
@@ -661,7 +640,7 @@ if __name__=='__main__':
     geo_sum.sort_values(by=community_pop, ascending=False, inplace=True)
     geo_sum.set_index(cname, inplace=True)
 
-    # Plot community populations
+    # Plotting community populations
     fig, ax= plt.subplots(figsize=(10,12))
     t = 'Population by Community Area, 2010'
     doc = 'population_bycommunity.png'
@@ -687,14 +666,7 @@ if __name__=='__main__':
     plt.gcf().tight_layout()
     fig.savefig(doc)
 
-    # Question 3: Crime rates
-    #
-    # Using your answer to (2),
-    # calculate the crime rate (defined as crime count per thousand capita)
-    # for the city in 2015.
-    # Then reanswer (1a-d) with crime count replaced by crime rate.
-    # Summarize your findings in words.
-
+    # Crime rates (crime count per thousand capita)
     # Merge all data thus far and create crime rate
     rate = 'crime_rate'
     ccount = 'Crime Count'
@@ -734,7 +706,6 @@ if __name__=='__main__':
     plt.gcf().tight_layout()
     fig.savefig(doc)
 
-    # 1 c)
     # Plot Daily Crime Rate on select communities
     # First save population total into community objects (value)
     for com in geo_sum.index:
@@ -808,15 +779,11 @@ if __name__=='__main__':
     plt.gcf().tight_layout()
     fig.savefig(doc)
 
-    # Question 4: Crime and Police Stations
-    #
-    # Download the police stations data.
-    #
+  
+    # Download the police stations data for geographic reference
 
     stations = pd.read_csv('Police_Stations.csv')
-    # (a) Extract the latitudes and longitudes of the police stations
-    # (found in the ADDRESS column) as floats into their own columns called
-    # 'Station Latitude' and 'Station Longitude', respectively.
+  
     station_lat = 'Station Latitude'
     station_lon = 'Station Longitude'
     station_coords = 'Station Coordinates'
@@ -826,40 +793,19 @@ if __name__=='__main__':
     stations[station_coords] = stations[station_latlon]
     stations[station_coords] = stations[station_coords].apply(make_coordinates)
 
-    # create likewise coordinates objects out of crime lat and lon
+    # create coordinate objects out of crime lat and lon
     crime_coords = 'Crime Coordinates'
     dem_crime_map[crime_coords] = dem_crime_map[lat_lon]
     dem_crime_map[crime_coords] = dem_crime_map[crime_coords].apply(make_coordinates)
 
-    # (b) Join the crime data with the stations on police district.
-    # Hint: the station district is a text field (because one of them is 'Headquarters')
-    # so you'll need to convert the crime district to the same.
+    # Join stations on police district.
     dem_crime_map[district] = dem_crime_map[district].astype(str)
     stations = stations.rename(columns={'DISTRICT':district})
     dem_crime_map = dem_crime_map.merge(stations, on=district)
 
-    # (c) Define a function which calculates the distance in kilometers
-    # between two points (latitude, longitude) using the Pythagorean theorem.
-    #
-    # Hint: To convert the coordinate distance to kilometers multiply by 95.
-    # For example the distance from (41, -87) to (41.1,-87) is about 9.5km.
-    # This is the scale factor for these coordinates near Chicago.
-    # Note this method is approximate because the scale factor varies
-    # from point to point (i.e. the Earth is not flat!).
+    # Calculate distances from within the Coordinates object
 
-    # This is done from with the Coordinates object
-
-    # (d) Calculate the distance between each crime and its district
-    # police station. Hint: If your answer to (c) is of the form
-    #
-    # def distance(row):
-    # crime_lat = row['Latitude']
-    # crime_lon = row['Longitude']
-    # station_lat = row['Station Latitude']
-    # station_lon = row['Station Longitude']
-    # ...
-    # Then you can simply do
-    # df.apply(distance, axis=1)
+    # distance between each crime and its district police station.
     def get_distance_to(row):
         if row[crime_coords] and row[station_coords]:
             return row[crime_coords].distance_to(row[station_coords]) / 1000
@@ -870,8 +816,8 @@ if __name__=='__main__':
     dem_crime_map[distance] = dem_crime_map[crime_coords]
 
     dem_crime_map[distance] = dem_crime_map.apply(get_distance_to, axis=1)
-    # (e) Plot a histogram of crime count against distance to district police station.
-    # Summarize the relationship in words.
+    
+    # Statistical istribution of crime count against by distance to district police station.
     plt.close('all')
     fig, ax = plt.subplots(figsize=(10,12))
     doc = 'crime_to_station_distance.png'
@@ -901,4 +847,4 @@ if __name__=='__main__':
     plt.legend(proxy_patches, proxy_labels, title='Median Distance and (Crime Rate) for Communities of Interest')
     plt.gcf().tight_layout()
     fig.savefig(doc)
-# Thanks for reading!
+    # Thanks for reading!
